@@ -193,11 +193,6 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
     setIsLoading(true);
     setError('');
 
-    typescript
-  const handleGoogleLogin = async () => {
-    setIsLoading(true);
-    setError('');
-
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
