@@ -285,6 +285,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
         <div className="px-8 pb-8">
           {view === 'initial' && (
             <div className="space-y-3">
+              {/* Google login button commented out
               <Button
                 onClick={handleGoogleLogin}
                 disabled={isLoading}
@@ -309,6 +310,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                   </span>
                 </div>
               </div>
+              */}
 
               <Button
                 onClick={() => setView('signup')}
@@ -408,6 +410,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                 </button>
               </div>
 
+              {/* Google login button commented out
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
@@ -434,6 +437,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                 </svg>
                 Continue with Google
               </Button>
+              */}
             </form>
           )}
 
@@ -509,6 +513,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                 )}
               </Button>
 
+              {/* Google login button commented out
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
@@ -535,6 +540,7 @@ export function AuthDialog({ open, onOpenChange, onAuthSuccess }: AuthDialogProp
                 </svg>
                 Continue with Google
               </Button>
+              */}
 
               <div className="pt-2 text-center">
                 <p className="text-sm text-slate-600 dark:text-slate-400">
