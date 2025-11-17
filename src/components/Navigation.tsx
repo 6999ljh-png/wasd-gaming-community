@@ -1,4 +1,4 @@
-import { Gamepad2, Home, User, Trophy, MessageSquare, Users, Moon, Sun, Globe, Plus, Check, LogOut, ChevronDown } from 'lucide-react';
+import { Gamepad2, Home, User, Trophy, MessageSquare, Users, Bookmark, Moon, Sun, Globe, Plus, Check, LogOut, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { TabType } from '../App';
@@ -10,6 +10,7 @@ import { useLanguage, Language } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { getSupabaseClient } from '../utils/supabase/client';
 import { projectId } from '../utils/supabase/info';
+import { NotificationCenter } from './NotificationCenter';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -225,6 +226,24 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
               <Users className={`w-4 h-4 relative z-10 ${activeTab === 'friends' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
               <span className="relative z-10">{t('nav.friends')}</span>
             </Button>
+            <Button
+              variant="ghost"
+              onClick={() => onTabChange('bookmarks')}
+              className={`gap-2 transition-all duration-300 rounded-xl relative overflow-hidden group ${
+                activeTab === 'bookmarks' 
+                  ? 'text-white bg-purple-500/20' 
+                  : 'text-slate-400 hover:text-white hover:bg-purple-500/10'
+              }`}
+            >
+              {activeTab === 'bookmarks' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 animate-gradient" />
+              )}
+              <Bookmark className={`w-4 h-4 relative z-10 ${activeTab === 'bookmarks' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
+              <span className="relative z-10">{t('bookmarks.title')}</span>
+            </Button>
+            
+            {/* Notification Center - only show when logged in */}
+            {currentUser && <NotificationCenter />}
             
             <div className="ml-4 flex items-center gap-2">
               {currentUser ? (

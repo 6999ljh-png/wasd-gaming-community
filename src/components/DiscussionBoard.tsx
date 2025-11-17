@@ -1,5 +1,8 @@
 import { Card } from './ui/card';
 import { PostDetail } from './PostDetail';
+import { TrendingTags } from './TrendingTags';
+import { Button } from './ui/button';
+import { X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { useUser } from '../contexts/UserContext';
@@ -22,12 +25,17 @@ export interface Post {
 export function DiscussionBoard({ onViewProfile }: { onViewProfile: (userId: string) => void }) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const { currentUser } = useUser();
   const { t } = useLanguage();
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    if (selectedTag) {
+      fetchPostsByTag(selectedTag);
+    } else {
+      fetchPosts();
+    }
+  }, [selectedTag]);
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -52,8 +60,43 @@ export function DiscussionBoard({ onViewProfile }: { onViewProfile: (userId: str
     }
   };
 
+  const fetchPostsByTag = async (tag: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-b33c7dce/tags/${encodeURIComponent(tag)}/posts`,
+        {
+          headers: {
+            'Authorization': `Bearer ${publicAnonKey}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(data.posts);
+      }
+    } catch (error) {
+      console.error('Error fetching posts by tag:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePostDeleted = () => {
-    fetchPosts();
+    if (selectedTag) {
+      fetchPostsByTag(selectedTag);
+    } else {
+      fetchPosts();
+    }
+  };
+
+  const handleTagClick = (tag: string) => {
+    setSelectedTag(tag);
+  };
+
+  const clearTagFilter = () => {
+    setSelectedTag(null);
   };
 
   if (loading) {
@@ -71,6 +114,25 @@ export function DiscussionBoard({ onViewProfile }: { onViewProfile: (userId: str
         <p className="text-slate-400">{t('forum.subtitle')}</p>
       </div>
 
+      {/* Trending Tags */}
+      <TrendingTags onTagClick={handleTagClick} limit={30} />
+      
+      {/* Active tag filter */}
+      {selectedTag && (
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-slate-400">{t('tags.filtering') || 'Filtering by:'}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearTagFilter}
+            className="gap-2 border-purple-500/30 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20"
+          >
+            #{selectedTag}
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
       {posts.length > 0 ? (
         <div className="space-y-6">
           {posts.map((post, index) => (
@@ -79,6 +141,7 @@ export function DiscussionBoard({ onViewProfile }: { onViewProfile: (userId: str
                 post={post} 
                 onViewProfile={onViewProfile}
                 onPostDeleted={handlePostDeleted}
+                onTagClick={handleTagClick}
               />
             </div>
           ))}

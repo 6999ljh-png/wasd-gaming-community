@@ -8,6 +8,8 @@ import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { useLanguage } from '../contexts/LanguageContext';
 import { GameSearchDialog } from './GameSearchDialog';
 import { ExternalLink } from 'lucide-react';
+import { FriendsSidebar } from './FriendsSidebar';
+import { AddFriendDialog } from './AddFriendDialog';
 
 interface HomePageProps {
   onViewProfile: (userId: string) => void;
@@ -20,6 +22,7 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
   const [trendingPosts, setTrendingPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
+  const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
   const [showAllGames, setShowAllGames] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
   const { t } = useLanguage();
@@ -363,6 +366,12 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
         open={isSearchDialogOpen}
         onOpenChange={setIsSearchDialogOpen}
         onGameSelect={(game) => console.log('Selected game:', game)}
+      />
+
+      {/* Add Friend Dialog */}
+      <AddFriendDialog 
+        open={isAddFriendDialogOpen}
+        onOpenChange={setIsAddFriendDialogOpen}
       />
     </div>
   );

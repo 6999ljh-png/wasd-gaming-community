@@ -6,6 +6,7 @@ import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { FileText, Video, Upload } from 'lucide-react';
 import { Card } from './ui/card';
+import { TagInput } from './TagInput';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { projectId } from '../utils/supabase/info';
@@ -25,6 +26,7 @@ export function SubmitDialog({ open, onOpenChange, onPostCreated }: SubmitDialog
   const [gameName, setGameName] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const handleReset = () => {
@@ -32,6 +34,7 @@ export function SubmitDialog({ open, onOpenChange, onPostCreated }: SubmitDialog
     setGameName('');
     setTitle('');
     setContent('');
+    setTags([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,6 +65,7 @@ export function SubmitDialog({ open, onOpenChange, onPostCreated }: SubmitDialog
             gameName,
             title,
             content,
+            tags,
           }),
         }
       );
@@ -208,6 +212,15 @@ export function SubmitDialog({ open, onOpenChange, onPostCreated }: SubmitDialog
                 </Card>
               </div>
             )}
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">{t('tags.trending') || '标签'}</Label>
+              <TagInput
+                tags={tags}
+                onTagsChange={setTags}
+                maxTags={5}
+              />
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

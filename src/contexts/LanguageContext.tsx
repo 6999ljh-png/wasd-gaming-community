@@ -80,6 +80,29 @@ const translations: Record<Language, Record<string, string>> = {
     'friends.requests': '请求',
     'friends.search': '搜索好友...',
     'friends.online.status': '在线',
+    'friends.myFriends': '我的好友',
+    'friends.noFriends': '还没有好友',
+    'friends.loginRequired': '请先登录查看好友',
+    'friends.friend': '位好友',
+    'friends.friends': '位好友',
+    
+    // Bookmarks
+    'bookmarks.title': '我的收藏',
+    'bookmarks.subtitle': '已保存的帖子',
+    'bookmarks.bookmark': '收藏',
+    'bookmarks.bookmarked': '已收藏',
+    'bookmarks.unbookmark': '取消收藏',
+    'bookmarks.loginRequired': '请先登录才能收藏帖子',
+    'bookmarks.noBookmarks': '还没有收藏任何帖子',
+    'bookmarks.hint': '点击帖子上的收藏图标来保存',
+    'bookmarks.bookmarks': '个收藏',
+    
+    // Tags
+    'tags.trending': '热门标签',
+    'tags.noTags': '暂无标签',
+    'tags.placeholder': '添加标签... (按回车)',
+    'tags.hint': '用回车、逗号或空格分隔标签',
+    'tags.filtering': '筛选标签',
     
     // Submit Dialog
     'submit.title': '投稿',
@@ -315,6 +338,29 @@ const translations: Record<Language, Record<string, string>> = {
     'friends.requests': '請求',
     'friends.search': '搜索好友...',
     'friends.online.status': '在線',
+    'friends.myFriends': '我的好友',
+    'friends.noFriends': "还没有好友",
+    'friends.loginRequired': '请先登录查看好友',
+    'friends.friend': '位好友',
+    'friends.friends': '位好友',
+    
+    // Bookmarks
+    'bookmarks.title': '我的收藏',
+    'bookmarks.subtitle': '已保存的帖子',
+    'bookmarks.bookmark': '收藏',
+    'bookmarks.bookmarked': '已收藏',
+    'bookmarks.unbookmark': '取消收藏',
+    'bookmarks.loginRequired': '请先登录才能收藏帖子',
+    'bookmarks.noBookmarks': '还没有收藏任何帖子',
+    'bookmarks.hint': '点击帖子上的收藏图标来保存',
+    'bookmarks.bookmarks': '个收藏',
+    
+    // Tags
+    'tags.trending': '热门标签',
+    'tags.noTags': '暂无标签',
+    'tags.placeholder': '添加标签... (按回车)',
+    'tags.hint': '用回车、逗号或空格分隔标签',
+    'tags.filtering': '筛选标签',
     
     // Submit Dialog
     'submit.title': '投稿',
@@ -550,6 +596,29 @@ const translations: Record<Language, Record<string, string>> = {
     'friends.requests': 'Requests',
     'friends.search': 'Search friends...',
     'friends.online.status': 'Online',
+    'friends.myFriends': 'My Friends',
+    'friends.noFriends': 'No friends yet',
+    'friends.loginRequired': 'Please log in to view friends',
+    'friends.friend': 'friend',
+    'friends.friends': 'friends',
+    
+    // Bookmarks
+    'bookmarks.title': 'My Bookmarks',
+    'bookmarks.subtitle': 'Saved Posts',
+    'bookmarks.bookmark': 'Bookmark',
+    'bookmarks.bookmarked': 'Bookmarked',
+    'bookmarks.unbookmark': 'Unbookmark',
+    'bookmarks.loginRequired': 'Please log in to bookmark posts',
+    'bookmarks.noBookmarks': 'No bookmarks yet',
+    'bookmarks.hint': 'Click the bookmark icon on a post to save it',
+    'bookmarks.bookmarks': 'bookmarks',
+    
+    // Tags
+    'tags.trending': 'Trending Tags',
+    'tags.noTags': 'No tags yet',
+    'tags.placeholder': 'Add tags... (press Enter)',
+    'tags.hint': 'Separate tags with Enter, comma, or space',
+    'tags.filtering': 'Filter Tags',
     
     // Submit Dialog
     'submit.title': 'Submit',

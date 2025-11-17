@@ -234,7 +234,7 @@ app.post('/make-server-b33c7dce/posts', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const { type, gameName, title, content } = await c.req.json();
+    const { type, gameName, title, content, tags } = await c.req.json();
 
     const postId = `post:${Date.now()}:${user.id}`;
     const post = {
@@ -244,6 +244,7 @@ app.post('/make-server-b33c7dce/posts', async (c) => {
       gameName,
       title,
       content,
+      tags: tags || [],
       likes: 0,
       dislikes: 0,
       likedBy: [],
@@ -254,6 +255,11 @@ app.post('/make-server-b33c7dce/posts', async (c) => {
     };
 
     await kv.set(postId, post);
+
+    // Update tags if provided
+    if (tags && tags.length > 0) {
+      await updatePostTags(postId, tags);
+    }
 
     // Update user stats
     const userData = await kv.get(`user:${user.id}`);
@@ -1476,5 +1482,596 @@ app.get('/make-server-b33c7dce/games/trending', async (c) => {
     return c.json({ error: 'Internal server error while fetching trending games' }, 500);
   }
 });
+
+// ============== SOCIAL FEATURES ROUTES ==============
+
+// Get notifications for a user
+app.get('/make-server-b33c7dce/notifications', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const notifications = await kv.getByPrefix(`notification:${user.id}:`);
+    
+    const notificationsArray = notifications
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 50); // Limit to 50 most recent
+
+    return c.json({ notifications: notificationsArray });
+  } catch (error) {
+    console.log('Get notifications error:', error);
+    return c.json({ error: 'Internal server error while fetching notifications' }, 500);
+  }
+});
+
+// Mark notification as read
+app.post('/make-server-b33c7dce/notifications/:notificationId/read', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const notificationId = c.req.param('notificationId');
+    const notification = await kv.get(notificationId);
+
+    if (!notification) {
+      return c.json({ error: 'Notification not found' }, 404);
+    }
+
+    if (!notificationId.includes(user.id)) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    notification.read = true;
+    await kv.set(notificationId, notification);
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Mark notification as read error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Mark all notifications as read
+app.post('/make-server-b33c7dce/notifications/read-all', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const notifications = await kv.getByPrefix(`notification:${user.id}:`);
+    
+    await Promise.all(
+      notifications.map(async (notification) => {
+        notification.read = true;
+        await kv.set(notification.id, notification);
+      })
+    );
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Mark all notifications as read error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Helper function to create a notification
+async function createNotification(
+  recipientId: string,
+  actorId: string,
+  actorName: string,
+  actorAvatar: string,
+  type: string,
+  targetType: string,
+  targetId: string,
+  content?: string
+) {
+  const notificationId = `notification:${recipientId}:${Date.now()}:${actorId}`;
+  const notification = {
+    id: notificationId,
+    type,
+    actorId,
+    actorName,
+    actorAvatar,
+    targetType,
+    targetId,
+    content,
+    timestamp: new Date().toISOString(),
+    read: false,
+  };
+
+  await kv.set(notificationId, notification);
+}
+
+// Share a post (creates a shared activity)
+app.post('/make-server-b33c7dce/posts/:postId/share', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+    const post = await kv.get(postId);
+
+    if (!post) {
+      return c.json({ error: 'Post not found' }, 404);
+    }
+
+    const userData = await kv.get(`user:${user.id}`);
+    
+    // Create share activity
+    const activityId = `activity:${user.id}:${Date.now()}`;
+    const activity = {
+      id: activityId,
+      userId: user.id,
+      userName: userData.name,
+      userAvatar: userData.avatar,
+      type: 'share',
+      action: 'shared a post',
+      targetTitle: post.title || post.gameName,
+      targetId: postId,
+      timestamp: new Date().toISOString(),
+      likes: 0,
+      comments: 0,
+    };
+
+    await kv.set(activityId, activity);
+
+    // Increment share count on post
+    post.shares = (post.shares || 0) + 1;
+    await kv.set(postId, post);
+
+    // Create notification for post author (if not sharing own post)
+    if (post.userId !== user.id) {
+      await createNotification(
+        post.userId,
+        user.id,
+        userData.name,
+        userData.avatar,
+        'share',
+        'post',
+        postId,
+        post.title || post.gameName
+      );
+    }
+
+    return c.json({ success: true, activity });
+  } catch (error) {
+    console.log('Share post error:', error);
+    return c.json({ error: 'Internal server error while sharing post' }, 500);
+  }
+});
+
+// Get activity feed (from friends and followed users)
+app.get('/make-server-b33c7dce/activities/feed', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Get user's friends
+    const friends = await kv.getByPrefix(`friend:${user.id}:`);
+    const friendIds = friends.map(f => f.friendId);
+
+    // Get activities from friends
+    const allActivities = await kv.getByPrefix('activity:');
+    const friendActivities = allActivities.filter(a => 
+      friendIds.includes(a.userId) || a.userId === user.id
+    );
+
+    const activities = friendActivities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 50);
+
+    return c.json({ activities });
+  } catch (error) {
+    console.log('Get activity feed error:', error);
+    return c.json({ error: 'Internal server error while fetching activity feed' }, 500);
+  }
+});
+
+// Get activities for a specific user
+app.get('/make-server-b33c7dce/users/:userId/activities', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    
+    const activities = await kv.getByPrefix(`activity:${userId}:`);
+    
+    const sortedActivities = activities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 30);
+
+    return c.json({ activities: sortedActivities });
+  } catch (error) {
+    console.log('Get user activities error:', error);
+    return c.json({ error: 'Internal server error while fetching user activities' }, 500);
+  }
+});
+
+// Get user online status
+app.get('/make-server-b33c7dce/users/:userId/status', async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    
+    const statusKey = `status:${userId}`;
+    const status = await kv.get(statusKey);
+
+    if (!status) {
+      return c.json({ isOnline: false, lastSeen: null });
+    }
+
+    // Consider online if last activity was within 5 minutes
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const lastActivity = new Date(status.lastActivity);
+    const isOnline = lastActivity > fiveMinutesAgo;
+
+    return c.json({ 
+      isOnline, 
+      lastSeen: status.lastActivity 
+    });
+  } catch (error) {
+    console.log('Get user status error:', error);
+    return c.json({ error: 'Internal server error while fetching user status' }, 500);
+  }
+});
+
+// Update user online status (called periodically by client)
+app.post('/make-server-b33c7dce/users/status', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const statusKey = `status:${user.id}`;
+    await kv.set(statusKey, {
+      userId: user.id,
+      lastActivity: new Date().toISOString(),
+    });
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Update user status error:', error);
+    return c.json({ error: 'Internal server error while updating user status' }, 500);
+  }
+});
+
+// Update like handler to create notification
+// (We need to modify the existing like endpoint to add notifications)
+
+// ==================== REACTIONS API ====================
+
+// Add reaction to a post
+app.post('/make-server-b33c7dce/posts/:postId/reactions', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+    const { emoji } = await c.req.json();
+
+    if (!emoji) {
+      return c.json({ error: 'Emoji is required' }, 400);
+    }
+
+    // Get or create reactions for this post
+    const reactionsKey = `reactions:${postId}`;
+    let reactions = await kv.get(reactionsKey) || {};
+
+    // Initialize emoji count if it doesn't exist
+    if (!reactions[emoji]) {
+      reactions[emoji] = { count: 0, users: [] };
+    }
+
+    // Check if user already reacted with this emoji
+    const userIndex = reactions[emoji].users.indexOf(user.id);
+    
+    if (userIndex > -1) {
+      // Remove reaction
+      reactions[emoji].users.splice(userIndex, 1);
+      reactions[emoji].count--;
+      
+      // Remove emoji key if count is 0
+      if (reactions[emoji].count === 0) {
+        delete reactions[emoji];
+      }
+    } else {
+      // Add reaction
+      reactions[emoji].users.push(user.id);
+      reactions[emoji].count++;
+    }
+
+    await kv.set(reactionsKey, reactions);
+
+    return c.json({ 
+      success: true, 
+      reactions,
+      userReacted: userIndex === -1
+    });
+  } catch (error) {
+    console.log('Add reaction error:', error);
+    return c.json({ error: 'Internal server error while adding reaction' }, 500);
+  }
+});
+
+// Get reactions for a post
+app.get('/make-server-b33c7dce/posts/:postId/reactions', async (c) => {
+  try {
+    const postId = c.req.param('postId');
+    const reactionsKey = `reactions:${postId}`;
+    const reactions = await kv.get(reactionsKey) || {};
+
+    return c.json({ reactions });
+  } catch (error) {
+    console.log('Get reactions error:', error);
+    return c.json({ error: 'Internal server error while fetching reactions' }, 500);
+  }
+});
+
+// ==================== BOOKMARKS API ====================
+
+// Bookmark/unbookmark a post
+app.post('/make-server-b33c7dce/bookmarks/:postId', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const postId = c.req.param('postId');
+    const bookmarksKey = `bookmarks:${user.id}`;
+    
+    let bookmarks = await kv.get(bookmarksKey) || [];
+
+    const index = bookmarks.indexOf(postId);
+    let isBookmarked = false;
+
+    if (index > -1) {
+      // Remove bookmark
+      bookmarks.splice(index, 1);
+    } else {
+      // Add bookmark
+      bookmarks.unshift(postId); // Add to beginning
+      isBookmarked = true;
+    }
+
+    await kv.set(bookmarksKey, bookmarks);
+
+    return c.json({ 
+      success: true, 
+      isBookmarked
+    });
+  } catch (error) {
+    console.log('Bookmark error:', error);
+    return c.json({ error: 'Internal server error while bookmarking' }, 500);
+  }
+});
+
+// Get user's bookmarks
+app.get('/make-server-b33c7dce/bookmarks', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ error: 'No authorization token' }, 401);
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const bookmarksKey = `bookmarks:${user.id}`;
+    const bookmarkIds = await kv.get(bookmarksKey) || [];
+
+    // Fetch post details for each bookmark
+    const posts = await Promise.all(
+      bookmarkIds.map(async (postId: string) => {
+        const post = await kv.get(`post:${postId}`);
+        if (!post) return null;
+
+        // Get author info
+        const author = await kv.get(`user:${post.userId}`);
+        
+        return {
+          ...post,
+          author: author ? {
+            id: author.id,
+            name: author.name,
+            avatar: author.avatar
+          } : null
+        };
+      })
+    );
+
+    // Filter out null posts (deleted posts)
+    const validPosts = posts.filter(post => post !== null);
+
+    return c.json({ bookmarks: validPosts });
+  } catch (error) {
+    console.log('Get bookmarks error:', error);
+    return c.json({ error: 'Internal server error while fetching bookmarks' }, 500);
+  }
+});
+
+// Check if post is bookmarked
+app.get('/make-server-b33c7dce/bookmarks/:postId/status', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    
+    if (!accessToken) {
+      return c.json({ isBookmarked: false });
+    }
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    
+    if (error || !user) {
+      return c.json({ isBookmarked: false });
+    }
+
+    const postId = c.req.param('postId');
+    const bookmarksKey = `bookmarks:${user.id}`;
+    const bookmarks = await kv.get(bookmarksKey) || [];
+
+    return c.json({ isBookmarked: bookmarks.includes(postId) });
+  } catch (error) {
+    console.log('Check bookmark status error:', error);
+    return c.json({ isBookmarked: false });
+  }
+});
+
+// ==================== TAGS/TOPICS API ====================
+
+// Get all popular tags
+app.get('/make-server-b33c7dce/tags', async (c) => {
+  try {
+    const tagsData = await kv.get('tags:stats') || {};
+    
+    // Convert to array and sort by count
+    const tags = Object.entries(tagsData)
+      .map(([tag, count]) => ({ tag, count }))
+      .sort((a: any, b: any) => b.count - a.count)
+      .slice(0, 50); // Top 50 tags
+
+    return c.json({ tags });
+  } catch (error) {
+    console.log('Get tags error:', error);
+    return c.json({ error: 'Internal server error while fetching tags' }, 500);
+  }
+});
+
+// Get posts by tag
+app.get('/make-server-b33c7dce/tags/:tag/posts', async (c) => {
+  try {
+    const tag = c.req.param('tag');
+    const tagPostsKey = `tag:${tag.toLowerCase()}:posts`;
+    
+    const postIds = await kv.get(tagPostsKey) || [];
+    
+    // Fetch post details
+    const posts = await Promise.all(
+      postIds.map(async (postId: string) => {
+        const post = await kv.get(`post:${postId}`);
+        if (!post) return null;
+
+        // Get author info
+        const author = await kv.get(`user:${post.userId}`);
+        
+        return {
+          ...post,
+          author: author ? {
+            id: author.id,
+            name: author.name,
+            avatar: author.avatar
+          } : null
+        };
+      })
+    );
+
+    const validPosts = posts
+      .filter(post => post !== null)
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return c.json({ posts: validPosts, tag });
+  } catch (error) {
+    console.log('Get posts by tag error:', error);
+    return c.json({ error: 'Internal server error while fetching posts by tag' }, 500);
+  }
+});
+
+// Add tags to a post (called when creating/updating post)
+async function updatePostTags(postId: string, tags: string[]) {
+  try {
+    // Get current tags stats
+    const tagsData = await kv.get('tags:stats') || {};
+    
+    // Update tag counts and post associations
+    for (const tag of tags) {
+      const normalizedTag = tag.toLowerCase().trim();
+      
+      // Update tag count
+      tagsData[normalizedTag] = (tagsData[normalizedTag] || 0) + 1;
+      
+      // Add post to tag's post list
+      const tagPostsKey = `tag:${normalizedTag}:posts`;
+      const tagPosts = await kv.get(tagPostsKey) || [];
+      
+      if (!tagPosts.includes(postId)) {
+        tagPosts.unshift(postId);
+        await kv.set(tagPostsKey, tagPosts);
+      }
+    }
+    
+    // Save updated tags stats
+    await kv.set('tags:stats', tagsData);
+  } catch (error) {
+    console.log('Update post tags error:', error);
+  }
+}
 
 Deno.serve(app.fetch);

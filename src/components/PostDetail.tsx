@@ -7,6 +7,9 @@ import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { useUser } from '../contexts/UserContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { PostReactions } from './PostReactions';
+import { BookmarkButton } from './BookmarkButton';
+import { PostTags } from './PostTags';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,9 +25,11 @@ interface PostDetailProps {
   post: any;
   onViewProfile?: (userId: string) => void;
   onPostDeleted?: () => void;
+  onPostUpdated?: () => void;
+  onTagClick?: (tag: string) => void;
 }
 
-export function PostDetail({ post, onViewProfile, onPostDeleted }: PostDetailProps) {
+export function PostDetail({ post, onViewProfile, onPostDeleted, onPostUpdated, onTagClick }: PostDetailProps) {
   const [likes, setLikes] = useState(post.likes || 0);
   const [dislikes, setDislikes] = useState(post.dislikes || 0);
   const [commentsCount, setCommentsCount] = useState(post.comments || 0);
@@ -245,41 +250,56 @@ export function PostDetail({ post, onViewProfile, onPostDeleted }: PostDetailPro
 
   return (
     <Card className="glass-dark border-purple-500/20 backdrop-blur-sm overflow-hidden hover:border-purple-500/50 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 group animate-slide-up relative">
-      {/* Hover gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-pink-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      <div className="grid md:grid-cols-[200px_1fr] gap-6 p-6 relative z-10">
-        <div className="space-y-3">
-          <div className="relative overflow-hidden rounded-lg group/img">
-            <img 
-              src={post.gameImage || 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80'} 
-              alt={post.gameName}
-              className="w-full aspect-[3/4] object-cover transition-transform duration-500 group-hover/img:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-300" />
-          </div>
-          <div className="flex items-center justify-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 transition-all duration-300 ${
-                  i < (post.rating || 0)
-                    ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
-                    : 'text-slate-600'
-                } group-hover:scale-110`}
-                style={{ transitionDelay: `${i * 50}ms` }}
+      {/* Game Image Background Banner */}
+      {post.gameImage && (
+        <div className="relative h-32 overflow-hidden">
+          <img 
+            src={post.gameImage || 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80'} 
+            alt={post.gameName}
+            className="w-full h-full object-cover blur-sm scale-110 opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900" />
+          
+          {/* Game Title Overlay */}
+          <div className="absolute bottom-4 left-6 flex items-center gap-4">
+            <div className="relative overflow-hidden rounded-lg ring-2 ring-purple-500/50 shadow-lg">
+              <img 
+                src={post.gameImage || 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=800&q=80'} 
+                alt={post.gameName}
+                className="w-20 h-20 object-cover"
               />
-            ))}
+            </div>
+            <div>
+              <h3 className="text-white text-xl font-bold mb-1 drop-shadow-lg">{post.gameName}</h3>
+              <div className="flex items-center gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 transition-all duration-300 ${
+                      i < (post.rating || 0)
+                        ? 'fill-yellow-400 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' 
+                        : 'text-slate-600'
+                    }`}
+                  />
+                ))}
+                <span className="text-sm text-slate-300 ml-2">{post.rating}/5</span>
+              </div>
+            </div>
           </div>
         </div>
+      )}
 
+      {/* Hover gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-pink-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+      
+      <div className="p-6 relative z-10">
         <div className="space-y-4">
           <div className="flex items-start justify-between gap-4">
             <div 
               className="flex items-center gap-3 cursor-pointer group/author"
               onClick={() => onViewProfile?.(post.userId)}
             >
-              <Avatar className="ring-2 ring-purple-500/30 group-hover/author:ring-purple-400 group-hover/author:scale-110 transition-all">
+              <Avatar className="w-12 h-12 ring-2 ring-purple-500/30 group-hover/author:ring-purple-400 group-hover/author:scale-110 transition-all">
                 <AvatarImage src={post.author?.avatar} />
                 <AvatarFallback>{post.author?.name?.[0] || 'U'}</AvatarFallback>
               </Avatar>
@@ -302,9 +322,20 @@ export function PostDetail({ post, onViewProfile, onPostDeleted }: PostDetailPro
           </div>
 
           <div>
-            <h3 className="text-white text-xl font-bold mb-1">{post.title || post.gameName}</h3>
-            <p className="text-purple-400 text-sm mb-2">{post.gameName}</p>
-            <p className="text-slate-300 leading-relaxed">{post.content}</p>
+            {post.title && <h3 className="text-white text-xl font-bold mb-3">{post.title}</h3>}
+            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            
+            {/* Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="mt-4">
+                <PostTags tags={post.tags} onTagClick={onTagClick} />
+              </div>
+            )}
+          </div>
+
+          {/* Reactions */}
+          <div className="pt-3">
+            <PostReactions postId={post.id} />
           </div>
 
           <div className="flex items-center gap-2 pt-4 border-t border-slate-800">
@@ -345,6 +376,11 @@ export function PostDetail({ post, onViewProfile, onPostDeleted }: PostDetailPro
               <MessageCircle className="w-4 h-4" />
               <span>{commentsCount}</span>
             </Button>
+
+            {/* Bookmark Button */}
+            <div className="ml-auto">
+              <BookmarkButton postId={post.id} />
+            </div>
           </div>
 
           {/* Comments Section */}

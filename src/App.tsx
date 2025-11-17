@@ -6,16 +6,20 @@ import { LeaderboardPage } from './components/LeaderboardPage';
 import { ForumPage } from './components/ForumPage';
 import { FriendsPage } from './components/FriendsPage';
 import { UserProfilePage } from './components/UserProfilePage';
+import { BookmarksPage } from './components/BookmarksPage';
+import { FriendsSidebar } from './components/FriendsSidebar';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { UserProvider } from './contexts/UserContext';
+import { AddFriendDialog } from './components/AddFriendDialog';
 
-export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'userProfile';
+export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'bookmarks' | 'userProfile';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [viewingUserId, setViewingUserId] = useState<string | null>(null);
   const [forumRefreshTrigger, setForumRefreshTrigger] = useState(0);
+  const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
 
   const handleViewUserProfile = (userId: string) => {
     setViewingUserId(userId);
@@ -58,16 +62,42 @@ export default function App() {
               onPostCreated={handlePostCreated}
             />
             
-            <main className="container mx-auto px-4 py-8 max-w-7xl relative z-10">
-              {activeTab === 'home' && <HomePage onViewProfile={handleViewUserProfile} onViewPost={handleViewPost} />}
-              {activeTab === 'personal' && <PersonalPage />}
-              {activeTab === 'leaderboard' && <LeaderboardPage onViewProfile={handleViewUserProfile} />}
-              {activeTab === 'forum' && <ForumPage onViewProfile={handleViewUserProfile} key={forumRefreshTrigger} />}
-              {activeTab === 'friends' && <FriendsPage />}
-              {activeTab === 'userProfile' && viewingUserId && (
-                <UserProfilePage userId={viewingUserId} onBack={handleBackFromProfile} />
+            <main className="relative z-10">
+              {/* Two column layout for home page */}
+              {activeTab === 'home' && (
+                <>
+                  <div className="container mx-auto px-4 py-8 max-w-7xl lg:mr-[340px]">
+                    <HomePage onViewProfile={handleViewUserProfile} onViewPost={handleViewPost} />
+                  </div>
+                  {/* Fixed right sidebar */}
+                  <div className="hidden lg:block fixed top-20 right-0 w-[320px] h-[calc(100vh-5rem)] overflow-auto p-4">
+                    <FriendsSidebar 
+                      onViewProfile={handleViewUserProfile} 
+                      onAddFriend={() => setIsAddFriendDialogOpen(true)}
+                    />
+                  </div>
+                </>
+              )}
+              
+              {activeTab !== 'home' && (
+                <div className="container mx-auto px-4 py-8 max-w-7xl">
+                  {activeTab === 'personal' && <PersonalPage />}
+                  {activeTab === 'leaderboard' && <LeaderboardPage onViewProfile={handleViewUserProfile} />}
+                  {activeTab === 'forum' && <ForumPage onViewProfile={handleViewUserProfile} key={forumRefreshTrigger} />}
+                  {activeTab === 'friends' && <FriendsPage />}
+                  {activeTab === 'bookmarks' && <BookmarksPage onViewProfile={handleViewUserProfile} />}
+                  {activeTab === 'userProfile' && viewingUserId && (
+                    <UserProfilePage userId={viewingUserId} onBack={handleBackFromProfile} />
+                  )}
+                </div>
               )}
             </main>
+
+            {/* Add Friend Dialog */}
+            <AddFriendDialog 
+              open={isAddFriendDialogOpen}
+              onOpenChange={setIsAddFriendDialogOpen}
+            />
           </div>
         </UserProvider>
       </LanguageProvider>
