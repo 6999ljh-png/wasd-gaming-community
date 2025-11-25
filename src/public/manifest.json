@@ -1,0 +1,97 @@
+{
+  "name": "GameHub - 游戏社区",
+  "short_name": "GameHub",
+  "description": "记录每一场精彩瞬间 - 你的专属游戏追踪平台",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#9333ea",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1170x2532",
+      "type": "image/png"
+    },
+    {
+      "src": "/screenshots/forum.png",
+      "sizes": "1170x2532",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["games", "social", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "首页",
+      "short_name": "Home",
+      "description": "打开首页",
+      "url": "/?shortcut=home",
+      "icons": [{ "src": "/icons/home-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "论坛",
+      "short_name": "Forum",
+      "description": "查看论坛",
+      "url": "/?shortcut=forum",
+      "icons": [{ "src": "/icons/forum-shortcut.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "消息",
+      "short_name": "Messages",
+      "description": "查看消息",
+      "url": "/?shortcut=messages",
+      "icons": [{ "src": "/icons/messages-shortcut.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -266,6 +266,21 @@ const translations: Record<Language, Record<string, string>> = {
     'games.searchDescription': '找到你喜欢的游戏',
     'games.noResults': '未找到相关游戏',
     'games.searchHint': '输入至少2个字符开始搜索',
+    
+    // Replies
+    'replies.show': '显示回复',
+    'replies.hide': '隐藏回复',
+    'replies.typeReply': '输入回复...',
+    
+    // PWA
+    'pwa.installTitle': '安装 GameHub 应用',
+    'pwa.iosInstructions': '在 iPhone 上安装此应用：',
+    'pwa.androidDesc': '将 GameHub 添加到主屏幕，获得更好的体验',
+    'pwa.install': '安装应用',
+    'pwa.gotIt': '知道了',
+    'pwa.feature.fast': '快速启动',
+    'pwa.feature.offline': '离线访问',
+    'pwa.feature.notifications': '推送通知',
   },
   'zh-TW': {
     // Navigation
@@ -524,6 +539,21 @@ const translations: Record<Language, Record<string, string>> = {
     'games.searchDescription': '找到你喜欢的游戏',
     'games.noResults': '未找到相关游戏',
     'games.searchHint': '输入至少2个字符开始搜索',
+    
+    // Replies
+    'replies.show': '显示回复',
+    'replies.hide': '隐藏回复',
+    'replies.typeReply': '输入回复...',
+    
+    // PWA
+    'pwa.installTitle': '安装 GameHub 应用',
+    'pwa.iosInstructions': '在 iPhone 上安装此应用：',
+    'pwa.androidDesc': '将 GameHub 添加到主屏幕，获得更好的体验',
+    'pwa.install': '安装应用',
+    'pwa.gotIt': '知道了',
+    'pwa.feature.fast': '快速启动',
+    'pwa.feature.offline': '离线访问',
+    'pwa.feature.notifications': '推送通知',
   },
   'en': {
     // Navigation
@@ -783,84 +813,20 @@ const translations: Record<Language, Record<string, string>> = {
     'games.noResults': '未找到相关游戏',
     'games.searchHint': '输入至少2个字符开始搜索',
     
-    // Messages/DM
-    'messages.title': 'Messages',
-    'messages.search': 'Search conversations...',
-    'messages.noConversations': 'No conversations yet',
-    'messages.noMessages': 'No messages yet. Start the conversation!',
-    'messages.typeMessage': 'Type a message...',
-    'messages.selectConversation': 'Select a conversation',
-    'messages.selectConversationDesc': 'Choose a conversation to start messaging',
-    
-    // Search
-    'search.placeholder': 'Search...',
-    'search.typeToSearch': 'Type to search users, posts, and games...',
-    'search.typeAtLeast': 'Type at least 2 characters to search',
-    'search.noResults': 'No results found',
-    'search.users': 'Users',
-    'search.posts': 'Posts',
-    'search.games': 'Games',
-    
-    // Events
-    'events.title': 'Events & Tournaments',
-    'events.description': 'Join or create gaming events and tournaments',
-    'events.create': 'Create Event',
-    'events.createNew': 'Create New Event',
-    'events.createDescription': 'Fill in the details to create a new event',
-    'events.noEvents': 'No events found',
-    'events.noEventsDescription': 'Be the first to create an event!',
-    'events.join': 'Join',
-    'events.leave': 'Leave',
-    'events.full': 'Full',
-    'events.createButton': 'Create Event',
-    'events.status.upcoming': 'Upcoming',
-    'events.status.ongoing': 'Ongoing',
-    'events.status.completed': 'Completed',
-    'events.status.all': 'All',
-    'events.form.title': 'Event Title',
-    'events.form.description': 'Description',
-    'events.form.game': 'Game',
-    'events.form.type': 'Type',
-    'events.form.startDate': 'Start Date',
-    'events.form.endDate': 'End Date',
-    'events.form.maxParticipants': 'Max Participants',
-    'events.form.prize': 'Prize',
-    
-    // Report
-    'report.title': 'Report Content',
-    'report.description': 'Help us keep our community safe by reporting inappropriate content',
-    'report.reasonLabel': 'Reason for reporting',
-    'report.selectReasonPlaceholder': 'Select a reason',
-    'report.descriptionLabel': 'Additional details (optional)',
-    'report.descriptionPlaceholder': 'Provide any additional context...',
-    'report.warning': 'False reports may result in action against your account',
-    'report.submit': 'Submit Report',
-    'report.submitting': 'Submitting...',
-    'report.success': 'Report submitted successfully',
-    'report.error': 'Failed to submit report',
-    'report.selectReason': 'Please select a reason',
-    'report.reasons.spam': 'Spam or misleading',
-    'report.reasons.harassment': 'Harassment or hate speech',
-    'report.reasons.inappropriate': 'Inappropriate content',
-    'report.reasons.violence': 'Violence or harm',
-    'report.reasons.copyright': 'Copyright violation',
-    'report.reasons.other': 'Other',
-    
-    // Rating
-    'rating.rateGame': 'Rate Game',
-    'rating.updateRating': 'Update Rating',
-    'rating.noRatings': 'No ratings yet',
-    'rating.beFirst': 'Be the first to rate this game!',
-    'rating.shareExperience': 'Share your experience with',
-    'rating.yourRating': 'Your Rating',
-    'rating.review': 'Review (Optional)',
-    'rating.reviewPlaceholder': 'Share your thoughts about this game...',
-    'rating.submit': 'Submit Rating',
-    
     // Replies
     'replies.show': 'Show replies',
     'replies.hide': 'Hide replies',
     'replies.typeReply': 'Type a reply...',
+    
+    // PWA
+    'pwa.installTitle': 'Install GameHub App',
+    'pwa.iosInstructions': 'To install this app on iPhone:',
+    'pwa.androidDesc': 'Add GameHub to your home screen for a better experience',
+    'pwa.install': 'Install App',
+    'pwa.gotIt': 'Got it',
+    'pwa.feature.fast': 'Fast startup',
+    'pwa.feature.offline': 'Offline access',
+    'pwa.feature.notifications': 'Push notifications',
   }
 };
 

@@ -2932,4 +2932,118 @@ app.get('/make-server-b33c7dce/search', async (c) => {
   }
 });
 
+// ==================== SOCIAL MATCHMAKING ====================
+
+// Matchmaking: Join Queue
+app.post('/make-server-b33c7dce/match/join', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    // Check if already in a match or queue
+    const currentStatus = await kv.get(`match_status:${user.id}`);
+    if (currentStatus && currentStatus.state === 'matched') {
+      return c.json({ status: 'matched', matchId: currentStatus.matchId });
+    }
+
+    // Look for others in queue
+    const queue = await kv.getByPrefix('match_queue:');
+    const otherPlayer = queue.find((item: any) => item.userId !== user.id);
+
+    if (otherPlayer) {
+      // Match found!
+      const matchId = `match:${Date.now()}:${user.id}:${otherPlayer.userId}`;
+      
+      // Remove other player from queue
+      await kv.del(`match_queue:${otherPlayer.userId}`);
+      
+      // Create match object
+      const matchData = {
+        id: matchId,
+        users: [user.id, otherPlayer.userId],
+        startTime: new Date().toISOString(),
+        status: 'active'
+      };
+      await kv.set(matchId, matchData);
+
+      // Set status for both users
+      await kv.set(`match_status:${user.id}`, { state: 'matched', matchId });
+      await kv.set(`match_status:${otherPlayer.userId}`, { state: 'matched', matchId });
+
+      return c.json({ status: 'matched', matchId });
+    } else {
+      // No one found, add to queue
+      await kv.set(`match_queue:${user.id}`, {
+        userId: user.id,
+        joinedAt: new Date().toISOString()
+      });
+      
+      // Set status to searching
+      await kv.set(`match_status:${user.id}`, { state: 'searching' });
+      
+      return c.json({ status: 'searching' });
+    }
+  } catch (error) {
+    console.log('Join match error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Matchmaking: Check Status
+app.get('/make-server-b33c7dce/match/status', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const status = await kv.get(`match_status:${user.id}`);
+    
+    if (status && status.state === 'matched') {
+      // Fetch match details
+      const match = await kv.get(status.matchId);
+      if (match) {
+        // Get opponent details
+        const opponentId = match.users.find((id: string) => id !== user.id);
+        const opponent = await kv.get(`user:${opponentId}`);
+        return c.json({ 
+          state: 'matched', 
+          matchId: status.matchId, 
+          opponent: opponent ? { name: opponent.name, avatar: opponent.avatar, id: opponent.id } : null 
+        });
+      }
+    }
+
+    return c.json(status || { state: 'idle' });
+  } catch (error) {
+    console.log('Check match status error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// Matchmaking: Leave Queue / End Match
+app.post('/make-server-b33c7dce/match/leave', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const status = await kv.get(`match_status:${user.id}`);
+
+    if (status?.state === 'searching') {
+      await kv.del(`match_queue:${user.id}`);
+    }
+    
+    await kv.del(`match_status:${user.id}`);
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.log('Leave match error:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
 Deno.serve(app.fetch);

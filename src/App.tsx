@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigation } from './components/Navigation';
 import { HomePage } from './components/HomePage';
 import { PersonalPage } from './components/PersonalPage';
@@ -7,13 +7,16 @@ import { ForumPage } from './components/ForumPage';
 import { FriendsPage } from './components/FriendsPage';
 import { UserProfilePage } from './components/UserProfilePage';
 import { BookmarksPage } from './components/BookmarksPage';
+import { MatchmakingPage } from './components/MatchmakingPage';
 import { FriendsSidebar } from './components/FriendsSidebar';
+import { InstallPWA } from './components/InstallPWA';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { UserProvider } from './contexts/UserContext';
 import { AddFriendDialog } from './components/AddFriendDialog';
+import { registerServiceWorker, trackAppInstall } from './utils/registerServiceWorker';
 
-export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'bookmarks' | 'userProfile';
+export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'bookmarks' | 'userProfile' | 'matchmaking';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -43,6 +46,11 @@ export default function App() {
     setActiveTab('forum');
     setForumRefreshTrigger(prev => prev + 1);
   };
+
+  useEffect(() => {
+    registerServiceWorker();
+    trackAppInstall();
+  }, []);
 
   return (
     <ThemeProvider>
@@ -86,6 +94,7 @@ export default function App() {
                   {activeTab === 'forum' && <ForumPage onViewProfile={handleViewUserProfile} key={forumRefreshTrigger} />}
                   {activeTab === 'friends' && <FriendsPage />}
                   {activeTab === 'bookmarks' && <BookmarksPage onViewProfile={handleViewUserProfile} />}
+                  {activeTab === 'matchmaking' && <MatchmakingPage />}
                   {activeTab === 'userProfile' && viewingUserId && (
                     <UserProfilePage userId={viewingUserId} onBack={handleBackFromProfile} />
                   )}
@@ -98,6 +107,9 @@ export default function App() {
               open={isAddFriendDialogOpen}
               onOpenChange={setIsAddFriendDialogOpen}
             />
+
+            {/* Install PWA */}
+            <InstallPWA />
           </div>
         </UserProvider>
       </LanguageProvider>
