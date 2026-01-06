@@ -212,8 +212,8 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
   if (!currentUser) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !val && handleCancel() && onOpenChange(false)}>
-      <DialogContent className="max-w-full w-full h-full md:max-w-[90vw] md:max-h-[90vh] md:h-auto md:w-auto p-0 border-0 md:border md:border-purple-500/30 bg-slate-950 md:rounded-3xl overflow-hidden flex flex-col items-center justify-center relative shadow-[0_0_100px_rgba(88,28,135,0.4)]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-full w-full h-full md:max-w-[90vw] md:max-h-[90vh] md:h-auto p-0 border-0 md:border md:border-purple-500/30 bg-slate-950 md:rounded-3xl overflow-hidden !flex !flex-col items-center justify-center relative shadow-[0_0_100px_rgba(88,28,135,0.4)] [&>button]:hidden">
         
         {/* Background Grid & Effects */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-950 to-slate-950" />
@@ -227,7 +227,10 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
         
         {/* Close Button */}
         <button 
-          onClick={() => { handleCancel(); onOpenChange(false); }}
+          onClick={() => { 
+            handleCancel(); 
+            onOpenChange(false); 
+          }}
           className="absolute top-4 right-4 md:top-6 md:right-6 z-50 p-2 bg-slate-800/50 hover:bg-slate-700/80 backdrop-blur-md rounded-full text-slate-400 hover:text-white transition-all duration-300 border border-slate-700 hover:border-slate-500"
         >
           <X className="w-5 h-5" />

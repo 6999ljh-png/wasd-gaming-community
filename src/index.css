@@ -909,6 +909,10 @@
     overflow: hidden;
   }
 
+  .\!flex {
+    display: flex !important;
+  }
+
   .block {
     display: block;
   }
@@ -1514,6 +1518,10 @@
 
   .grid-rows-\[auto_auto\] {
     grid-template-rows: auto auto;
+  }
+
+  .\!flex-col {
+    flex-direction: column !important;
   }
 
   .flex-col {
@@ -4960,12 +4968,6 @@
   }
 
   @media (width >= 48rem) {
-    .md\:w-auto {
-      width: auto;
-    }
-  }
-
-  @media (width >= 48rem) {
     .md\:max-w-\[90vw\] {
       max-width: 90vw;
     }
@@ -5641,6 +5643,10 @@
 
   .\[\&\:last-child\]\:pb-6:last-child {
     padding-bottom: calc(var(--spacing) * 6);
+  }
+
+  .\[\&\>button\]\:hidden > button {
+    display: none;
   }
 
   .\[\&\>svg\]\:pointer-events-none > svg {
