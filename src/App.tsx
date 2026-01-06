@@ -6,8 +6,6 @@ import { LeaderboardPage } from './components/LeaderboardPage';
 import { ForumPage } from './components/ForumPage';
 import { FriendsPage } from './components/FriendsPage';
 import { UserProfilePage } from './components/UserProfilePage';
-import { BookmarksPage } from './components/BookmarksPage';
-import { MatchmakingPage } from './components/MatchmakingPage';
 import { FriendsSidebar } from './components/FriendsSidebar';
 import { InstallPWA } from './components/InstallPWA';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -16,7 +14,7 @@ import { UserProvider } from './contexts/UserContext';
 import { AddFriendDialog } from './components/AddFriendDialog';
 import { registerServiceWorker, trackAppInstall } from './utils/registerServiceWorker';
 
-export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'bookmarks' | 'userProfile' | 'matchmaking';
+export type TabType = 'home' | 'personal' | 'leaderboard' | 'forum' | 'friends' | 'bookmarks' | 'userProfile';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -93,8 +91,6 @@ export default function App() {
                   {activeTab === 'leaderboard' && <LeaderboardPage onViewProfile={handleViewUserProfile} />}
                   {activeTab === 'forum' && <ForumPage onViewProfile={handleViewUserProfile} key={forumRefreshTrigger} />}
                   {activeTab === 'friends' && <FriendsPage />}
-                  {activeTab === 'bookmarks' && <BookmarksPage onViewProfile={handleViewUserProfile} />}
-                  {activeTab === 'matchmaking' && <MatchmakingPage />}
                   {activeTab === 'userProfile' && viewingUserId && (
                     <UserProfilePage userId={viewingUserId} onBack={handleBackFromProfile} />
                   )}

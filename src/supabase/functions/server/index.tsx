@@ -234,7 +234,7 @@ app.post('/make-server-b33c7dce/posts', async (c) => {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const { type, gameName, title, content, tags } = await c.req.json();
+    const { type, gameName, title, content, tags, images } = await c.req.json();
 
     const postId = `post:${Date.now()}:${user.id}`;
     const post = {
@@ -245,6 +245,7 @@ app.post('/make-server-b33c7dce/posts', async (c) => {
       title,
       content,
       tags: tags || [],
+      images: images || [],
       likes: 0,
       dislikes: 0,
       likedBy: [],
@@ -838,6 +839,151 @@ app.delete('/make-server-b33c7dce/friends/:friendId', async (c) => {
   }
 });
 
+// Join matchmaking queue
+app.post('/make-server-b33c7dce/match/join', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const body = await c.req.json();
+    const { game, mode, mic } = body;
+
+    if (!game || !mode) {
+      return c.json({ error: 'Game and mode are required' }, 400);
+    }
+
+    // Get current user profile
+    const userData = await kv.get(`user:${user.id}`);
+    if (!userData) return c.json({ error: 'User profile not found' }, 404);
+
+    // Queue key based on filters (e.g., match:waiting:lol:ranked)
+    // Note: Mic preference is soft - we match even if mic pref is different, 
+    // but we could make it strict if we wanted. For now, strict on game/mode.
+    const queueKey = `match:waiting:${game}:${mode}`;
+
+    // Check if anyone is waiting in this specific queue
+    const waitingUserId = await kv.get(queueKey);
+    
+    // If someone is waiting and it's not me
+    if (waitingUserId && waitingUserId !== user.id) {
+      const waitingUserData = await kv.get(`user:${waitingUserId}`);
+      
+      if (waitingUserData) {
+        // MATCH FOUND!
+        const matchId = `match:${Date.now()}`;
+        
+        // Prepare match data
+        const matchResultForMe = {
+          status: 'found',
+          matchId,
+          opponent: {
+            id: waitingUserData.id,
+            name: waitingUserData.name,
+            avatar: waitingUserData.avatar,
+            level: waitingUserData.level,
+            game,
+            mode,
+            mic: mic // Just echoing back preference for now
+          }
+        };
+
+        const matchResultForOpponent = {
+          status: 'found',
+          matchId,
+          opponent: {
+            id: userData.id,
+            name: userData.name,
+            avatar: userData.avatar,
+            level: userData.level,
+            game,
+            mode,
+            mic // Echoing back
+          }
+        };
+
+        // Save results for both players to poll
+        await kv.set(`match:result:${user.id}`, matchResultForMe);
+        await kv.set(`match:result:${waitingUserId}`, matchResultForOpponent);
+        
+        // Clear waiting queue (Seat taken)
+        await kv.del(queueKey);
+
+        return c.json(matchResultForMe);
+      }
+    }
+
+    // No one waiting (or waiting user was me/invalid), add self to queue
+    await kv.set(queueKey, user.id);
+    
+    // Record which queue I am in so I can leave later
+    await kv.set(`match:user_queue:${user.id}`, queueKey);
+
+    // Set initial status
+    await kv.set(`match:result:${user.id}`, { status: 'searching', game, mode });
+    
+    return c.json({ status: 'searching' });
+
+  } catch (error) {
+    console.log('Join match error:', error);
+    return c.json({ error: 'Internal server error while joining match' }, 500);
+  }
+});
+
+// Check match status (Unchanged logic, just keeping for context)
+app.get('/make-server-b33c7dce/match/status', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    const result = await kv.get(`match:result:${user.id}`);
+    
+    if (!result) {
+      return c.json({ status: 'idle' });
+    }
+
+    return c.json(result);
+  } catch (error) {
+    return c.json({ error: 'Error checking status' }, 500);
+  }
+});
+
+// Leave matchmaking queue
+app.post('/make-server-b33c7dce/match/leave', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    if (!accessToken) return c.json({ error: 'Unauthorized' }, 401);
+
+    const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+    if (error || !user) return c.json({ error: 'Unauthorized' }, 401);
+
+    // Find out which queue the user was in
+    const queueKey = await kv.get(`match:user_queue:${user.id}`);
+    
+    if (queueKey) {
+      // Check if they are still the head of that queue
+      const waitingUserInQueue = await kv.get(queueKey);
+      if (waitingUserInQueue === user.id) {
+        await kv.del(queueKey);
+      }
+      // Clean up the pointer
+      await kv.del(`match:user_queue:${user.id}`);
+    }
+
+    // Clear my status
+    await kv.del(`match:result:${user.id}`);
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json({ error: 'Error leaving match' }, 500);
+  }
+});
+
 // Health check
 app.get('/make-server-b33c7dce/health', (c) => {
   return c.json({ status: 'ok' });
@@ -909,6 +1055,75 @@ app.post('/make-server-b33c7dce/upload/avatar', async (c) => {
   } catch (error) {
     console.log('Avatar upload error:', error);
     return c.json({ error: 'Internal server error while uploading avatar' }, 500);
+  }
+});
+
+// Upload post image
+app.post('/make-server-b33c7dce/upload/post-image', async (c) => {
+  try {
+    const accessToken = c.req.header('Authorization')?.split(' ')[1];
+    const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+    
+    if (authError || !user) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const body = await c.req.json();
+    const { image } = body; // base64 encoded image
+    
+    if (!image) {
+      return c.json({ error: 'No image provided' }, 400);
+    }
+
+    // Create bucket if not exists
+    const bucketName = 'make-b33c7dce-posts';
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+    
+    if (!bucketExists) {
+      await supabase.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: 10485760, // 10MB
+      });
+    }
+
+    // Convert base64 to buffer
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Determine file extension from base64 string
+    const mimeMatch = image.match(/^data:image\/(\w+);base64,/);
+    const extension = mimeMatch ? mimeMatch[1] : 'png';
+    
+    // Generate unique filename
+    const filename = `${user.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.${extension}`;
+    const filepath = `post_images/${filename}`;
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filepath, buffer, {
+        contentType: `image/${extension}`,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.log('Upload error:', uploadError);
+      return c.json({ error: uploadError.message }, 500);
+    }
+
+    // Get public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucketName)
+      .getPublicUrl(filepath);
+
+    return c.json({ 
+      success: true, 
+      url: publicUrl 
+    });
+  } catch (error) {
+    console.log('Post image upload error:', error);
+    return c.json({ error: 'Internal server error while uploading post image' }, 500);
   }
 });
 

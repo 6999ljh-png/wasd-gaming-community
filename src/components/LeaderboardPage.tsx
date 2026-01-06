@@ -52,7 +52,6 @@ export function LeaderboardPage({ onViewProfile }: LeaderboardPageProps) {
         <TabsList className="glass-dark border border-purple-500/30 w-full h-12 p-1">
           <TabsTrigger value="global" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">{t('leaderboard.global')}</TabsTrigger>
           <TabsTrigger value="friends" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">{t('leaderboard.friends')}</TabsTrigger>
-          <TabsTrigger value="weekly" className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-pink-600 data-[state=active]:text-white transition-all duration-300">{t('leaderboard.weekly')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global" className="space-y-4 mt-6">
@@ -64,10 +63,11 @@ export function LeaderboardPage({ onViewProfile }: LeaderboardPageProps) {
             leaderboard.map((player, index) => (
               <Card 
                 key={player.id}
-                className={`glass-dark border-purple-500/20 p-4 hover:border-purple-500/50 hover:scale-[1.02] transition-all duration-300 animate-slide-up group cursor-pointer ${
+                className={`glass-dark border-purple-500/20 p-4 hover:border-purple-500/50 hover:scale-[1.02] transition-all duration-300 animate-slide-up group cursor-pointer ${ 
                   index < 3 ? 'ring-2 ring-purple-500/50 shadow-lg shadow-purple-500/20' : ''
                 }`}
                 style={{ animationDelay: `${index * 0.05}s` }}
+                onClick={() => onViewProfile(player.id)}
               >
                 <div className="flex items-center gap-4">
                   {/* Rank */}
@@ -91,7 +91,7 @@ export function LeaderboardPage({ onViewProfile }: LeaderboardPageProps) {
 
                   {/* Player Info */}
                   <div className="flex-1">
-                    <h3 className="text-white font-bold group-hover:text-purple-300 transition-colors" onClick={() => onViewProfile(player.id)}>{player.name}</h3>
+                    <h3 className="text-white font-bold group-hover:text-purple-300 transition-colors">{player.name}</h3>
                     <p className="text-slate-400 text-sm flex items-center gap-2">
                       <span className="inline-block px-2 py-0.5 bg-purple-500/20 rounded-full text-xs">
                         {t('common.level')} {player.level}
@@ -129,12 +129,6 @@ export function LeaderboardPage({ onViewProfile }: LeaderboardPageProps) {
         <TabsContent value="friends" className="mt-6">
           <div className="text-center py-12 glass-dark rounded-xl p-8">
             <p className="text-slate-400">{t('leaderboard.friendsComingSoon')}</p>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="weekly" className="mt-6">
-          <div className="text-center py-12 glass-dark rounded-xl p-8">
-            <p className="text-slate-400">{t('leaderboard.weeklyComingSoon')}</p>
           </div>
         </TabsContent>
       </Tabs>

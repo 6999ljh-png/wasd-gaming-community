@@ -1,7 +1,7 @@
 import { Card } from './ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Button } from './ui/button';
-import { Gamepad2, FileText, Plus } from 'lucide-react';
+import { Gamepad2, FileText, Plus, Bookmark, BookmarkX, Share2 } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
@@ -9,24 +9,34 @@ import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { useLanguage } from '../contexts/LanguageContext';
 import { EditProfileDialog } from './EditProfileDialog';
 import { GameLibraryDialog } from './GameLibraryDialog';
+import { ShareProfileDialog } from './ShareProfileDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { PostDetail } from './PostDetail';
 
 export function PersonalPage() {
   const { currentUser } = useUser();
   const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bookmarks, setBookmarks] = useState<any[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isGameLibraryOpen, setIsGameLibraryOpen] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
     if (currentUser) {
       fetchUserPosts();
+      fetchBookmarks();
+    } else {
+      setLoadingPosts(false);
+      setLoadingBookmarks(false);
     }
-    setLoading(false);
   }, [currentUser]);
 
   const fetchUserPosts = async () => {
     if (!currentUser) return;
+    setLoadingPosts(true);
 
     try {
       const response = await fetch(
@@ -44,7 +54,38 @@ export function PersonalPage() {
       }
     } catch (error) {
       console.error('Error fetching user posts:', error);
+    } finally {
+      setLoadingPosts(false);
     }
+  };
+
+  const fetchBookmarks = async () => {
+    if (!currentUser?.accessToken) return;
+    setLoadingBookmarks(true);
+
+    try {
+      const response = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/make-server-b33c7dce/bookmarks`,
+        {
+          headers: {
+            'Authorization': `Bearer ${currentUser.accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setBookmarks(data.bookmarks || []);
+      }
+    } catch (error) {
+      console.error('Error fetching bookmarks:', error);
+    } finally {
+      setLoadingBookmarks(false);
+    }
+  };
+
+  const handleBookmarkRemoved = () => {
+    fetchBookmarks();
   };
 
   const formatTimestamp = (isoDate: string) => {
@@ -53,13 +94,6 @@ export function PersonalPage() {
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / 86400000);
     return `${days} ${t('common.daysAgo')}`;
-  };
-
-  const calculateDaysJoined = (createdAt: string) => {
-    const now = new Date();
-    const created = new Date(createdAt);
-    const diff = now.getTime() - created.getTime();
-    return Math.floor(diff / 86400000);
   };
 
   // Calculate experience progress to next level
@@ -131,6 +165,16 @@ export function PersonalPage() {
           <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-purple-500/50 transform hover:scale-105 transition-all duration-300" onClick={() => setIsEditDialogOpen(true)}>
             {t('personal.editProfile')}
           </Button>
+
+          <Button 
+            variant="outline"
+            size="icon"
+            className="border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 hover:text-white transition-all duration-300"
+            onClick={() => setIsShareDialogOpen(true)}
+            title={t('personal.shareProfile') || 'Share Gamer Card'}
+          >
+            <Share2 className="w-5 h-5" />
+          </Button>
         </div>
       </Card>
 
@@ -173,61 +217,105 @@ export function PersonalPage() {
         </div>
       </div>
 
-      {/* My Posts Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <FileText className="w-5 h-5 text-purple-400" />
-            <h3 className="text-white text-xl font-bold">{t('personal.myPosts')}</h3>
-          </div>
-        </div>
+      {/* Tabs for My Posts and Favorites */}
+      <Tabs defaultValue="posts" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-900/50 p-1 rounded-xl border border-slate-800">
+          <TabsTrigger 
+            value="posts"
+            className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-slate-400 rounded-lg transition-all duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              {t('personal.myPosts')}
+            </div>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="favorites"
+            className="data-[state=active]:bg-pink-600 data-[state=active]:text-white text-slate-400 rounded-lg transition-all duration-300"
+          >
+            <div className="flex items-center gap-2">
+              <Bookmark className="w-4 h-4" />
+              {t('bookmarks.title') || 'Favorites'}
+            </div>
+          </TabsTrigger>
+        </TabsList>
 
-        {loading ? (
-          <div className="text-center text-slate-400 py-8">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-          </div>
-        ) : userPosts.length > 0 ? (
-          <div className="space-y-4">
-            {userPosts.map((post, index) => (
-              <Card 
-                key={post.id} 
-                className="glass-dark border-purple-500/20 p-4 hover:border-purple-500/50 transition-all duration-300 cursor-pointer group hover:scale-[1.02] animate-slide-up relative overflow-hidden"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-pink-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
-                <div className="space-y-3 relative z-10">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-white text-lg font-bold group-hover:text-purple-300 transition-colors">{post.title || post.gameName}</h4>
-                      <p className="text-slate-400 text-sm line-clamp-2 mt-1">{post.content}</p>
-                    </div>
-                  </div>
+        <TabsContent value="posts" className="mt-6 space-y-4 outline-none">
+          {loadingPosts ? (
+            <div className="text-center text-slate-400 py-8">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+          ) : userPosts.length > 0 ? (
+            <div className="space-y-4">
+              {userPosts.map((post, index) => (
+                <Card 
+                  key={post.id} 
+                  className="glass-dark border-purple-500/20 p-4 hover:border-purple-500/50 transition-all duration-300 cursor-pointer group hover:scale-[1.02] animate-slide-up relative overflow-hidden"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 via-pink-600/5 to-purple-600/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                    <div className="flex items-center gap-4 text-sm text-slate-400">
-                      <span className="px-2 py-1 bg-purple-500/20 rounded-full text-purple-400">{post.gameName}</span>
-                      <span className="flex items-center gap-1 hover:text-pink-400 transition-colors">
-                        <span>👍</span> {post.likes}
-                      </span>
-                      <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
-                        <span>💬</span> {post.comments}
-                      </span>
+                  <div className="space-y-3 relative z-10">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-white text-lg font-bold group-hover:text-purple-300 transition-colors">{post.title || post.gameName}</h4>
+                        <p className="text-slate-400 text-sm line-clamp-2 mt-1">{post.content}</p>
+                      </div>
                     </div>
-                    <span className="text-slate-500 text-sm">{formatTimestamp(post.createdAt)}</span>
+                    
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                      <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <span className="px-2 py-1 bg-purple-500/20 rounded-full text-purple-400">{post.gameName}</span>
+                        <span className="flex items-center gap-1 hover:text-pink-400 transition-colors">
+                          <span>👍</span> {post.likes}
+                        </span>
+                        <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+                          <span>💬</span> {post.comments}
+                        </span>
+                      </div>
+                      <span className="text-slate-500 text-sm">{formatTimestamp(post.createdAt)}</span>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="glass-dark border-purple-500/20 p-12 text-center">
-            <div className="text-6xl mb-4 opacity-50">📝</div>
-            <p className="text-slate-400">{t('personal.noPosts')}</p>
-            <p className="text-slate-500 text-sm mt-1">{t('personal.createFirstPost')}</p>
-          </Card>
-        )}
-      </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card className="glass-dark border-purple-500/20 p-12 text-center">
+              <div className="text-6xl mb-4 opacity-50">📝</div>
+              <p className="text-slate-400">{t('personal.noPosts')}</p>
+              <p className="text-slate-500 text-sm mt-1">{t('personal.createFirstPost')}</p>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="favorites" className="mt-6 space-y-4 outline-none">
+          {loadingBookmarks ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+          ) : bookmarks.length === 0 ? (
+            <Card className="glass-dark border-purple-500/20 p-12 text-center space-y-4">
+              <BookmarkX className="w-16 h-16 mx-auto text-slate-600" />
+              <p className="text-slate-400 text-lg">{t('bookmarks.noBookmarks') || 'No bookmarks yet'}</p>
+              <p className="text-slate-500 text-sm">
+                {t('bookmarks.hint') || 'Click the bookmark icon on posts to save them here'}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {bookmarks.map((post) => (
+                <PostDetail
+                  key={post.id}
+                  post={post}
+                  onViewProfile={() => {}} // We are already in personal context, or we can navigate. But for simplicity, empty.
+                  onPostDeleted={handleBookmarkRemoved}
+                  onPostUpdated={handleBookmarkRemoved}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Profile Dialog */}
       <EditProfileDialog 
@@ -240,6 +328,12 @@ export function PersonalPage() {
       <GameLibraryDialog 
         open={isGameLibraryOpen} 
         onOpenChange={setIsGameLibraryOpen}
+      />
+
+      {/* Share Profile Dialog */}
+      <ShareProfileDialog 
+        open={isShareDialogOpen} 
+        onOpenChange={setIsShareDialogOpen}
       />
     </div>
   );

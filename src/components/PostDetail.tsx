@@ -325,6 +325,27 @@ export function PostDetail({ post, onViewProfile, onPostDeleted, onPostUpdated, 
             {post.title && <h3 className="text-white text-xl font-bold mb-3">{post.title}</h3>}
             <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{post.content}</p>
             
+            {/* Post Images */}
+            {post.images && post.images.length > 0 && (
+              <div className={`grid gap-2 mt-4 ${post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                {post.images.map((image: string, index: number) => (
+                  <div 
+                    key={index} 
+                    className={`rounded-lg overflow-hidden border border-slate-700 hover:border-purple-500/50 transition-colors ${
+                      post.images.length === 3 && index === 0 ? 'col-span-2' : ''
+                    }`}
+                  >
+                    <img 
+                      src={image} 
+                      alt={`Post attachment ${index + 1}`} 
+                      className="w-full h-full object-cover max-h-[500px]"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Tags */}
             {post.tags && post.tags.length > 0 && (
               <div className="mt-4">

@@ -1,10 +1,11 @@
-import { Gamepad2, Home, User, Trophy, MessageSquare, Users, Bookmark, Moon, Sun, Globe, Plus, Check, LogOut, ChevronDown, Swords } from 'lucide-react';
+import { Gamepad2, Home, User, Trophy, MessageSquare, Users, Bookmark, Moon, Sun, Globe, Plus, Check, LogOut, ChevronDown, Swords, Zap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { TabType } from '../App';
 import { useState, useEffect } from 'react';
 import { SubmitDialog } from './SubmitDialog';
 import { AuthDialog } from './AuthDialog';
+import { RandomMatchDialog } from './RandomMatchDialog';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage, Language } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
@@ -29,6 +30,7 @@ interface NavigationProps {
 export function Navigation({ activeTab, onTabChange, onPostCreated }: NavigationProps) {
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [isMatchDialogOpen, setIsMatchDialogOpen] = useState(false);
   const { currentUser, setCurrentUser } = useUser();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
@@ -118,7 +120,7 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
           </div>
           
           {/* Center - Navigation (Scrollable on Mobile) */}
-          <div className={`flex items-center gap-1 ${isMobile ? 'overflow-x-auto pb-2 -mb-2 mask-linear-fade' : ''} flex-1 justify-center`}>
+          <div className={`flex items-center gap-2 ${isMobile ? 'overflow-x-auto pb-2 -mb-2 mask-linear-fade' : ''} flex-1 justify-center`}>
             <Button
               variant="ghost"
               onClick={() => onTabChange('home')}
@@ -136,22 +138,22 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
               {!isMobile && <span className="relative z-10">{t('nav.home')}</span>}
             </Button>
 
-            {/* Matchmaking - Prominent on Mobile */}
+            {/* Matchmaking - Prominent on Mobile (REPLACED WITH RANDOM MATCH) */}
             <Button
               variant="ghost"
-              onClick={() => onTabChange('matchmaking')}
+              onClick={() => setIsMatchDialogOpen(true)}
               className={`gap-2 transition-all duration-300 rounded-xl relative overflow-hidden group flex-shrink-0 ${
-                activeTab === 'matchmaking' 
-                  ? 'text-white bg-purple-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-purple-500/10'
+                isMatchDialogOpen
+                  ? 'text-white bg-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.3)]' 
+                  : 'text-slate-400 hover:text-white hover:bg-yellow-500/10'
               }`}
               size={isMobile ? 'icon' : 'default'}
             >
-              {activeTab === 'matchmaking' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 animate-gradient" />
-              )}
-              <Swords className={`w-4 h-4 relative z-10 ${activeTab === 'matchmaking' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
-              {!isMobile && <span className="relative z-10">Match</span>}
+              {/* Pulse effect */}
+              <div className="absolute inset-0 bg-yellow-500/5 animate-pulse" />
+              
+              <Zap className={`w-4 h-4 relative z-10 text-yellow-500 ${isMatchDialogOpen ? 'scale-110' : 'group-hover:scale-125'} transition-transform`} fill="currentColor" />
+              {!isMobile && <span className="relative z-10 font-bold text-yellow-500/90 tracking-wide">{t('match.randomDuo')}</span>}
             </Button>
 
             <Button
@@ -221,22 +223,6 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
                   )}
                   <User className={`w-4 h-4 relative z-10 ${activeTab === 'personal' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
                   <span className="relative z-10">{t('nav.personal')}</span>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  onClick={() => onTabChange('bookmarks')}
-                  className={`gap-2 transition-all duration-300 rounded-xl relative overflow-hidden group flex-shrink-0 ${
-                    activeTab === 'bookmarks' 
-                      ? 'text-white bg-purple-500/20' 
-                      : 'text-slate-400 hover:text-white hover:bg-purple-500/10'
-                  }`}
-                >
-                  {activeTab === 'bookmarks' && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 animate-gradient" />
-                  )}
-                  <Bookmark className={`w-4 h-4 relative z-10 ${activeTab === 'bookmarks' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
-                  <span className="relative z-10">{t('bookmarks.title')}</span>
                 </Button>
               </>
             )}
@@ -325,13 +311,6 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
                           <User className="w-4 h-4 mr-2" />
                           {t('nav.personal')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onTabChange('bookmarks')}
-                          className="text-slate-300 hover:text-white cursor-pointer"
-                        >
-                          <Bookmark className="w-4 h-4 mr-2" />
-                          {t('bookmarks.title')}
-                        </DropdownMenuItem>
                         <DropdownMenuSeparator className="bg-slate-700" />
                         <DropdownMenuItem
                           onClick={toggleTheme}
@@ -379,7 +358,7 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
                   <Avatar className="w-8 h-8">
                     <AvatarFallback>?</AvatarFallback>
                   </Avatar>
-                  {!isMobile && <span className="text-slate-400 text-sm">{t('auth.clickToLogin')}</span>}
+                  {!isMobile && <span className="text-slate-400 text-sm font-[Abhaya_Libre_ExtraBold]">{t('auth.clickToLogin')}</span>}
                 </Button>
               )}
             </div>
@@ -397,6 +376,11 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
         open={isAuthDialogOpen}
         onOpenChange={setIsAuthDialogOpen}
         onAuthSuccess={(user) => setCurrentUser(user)}
+      />
+
+      <RandomMatchDialog
+        open={isMatchDialogOpen}
+        onOpenChange={setIsMatchDialogOpen}
       />
     </nav>
   );
