@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Dialog, DialogContent } from './ui/dialog';
+import * as DialogPrimitive from '@radix-ui/react-dialog@1.1.6';
 import { Button } from './ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { Mic, MicOff, X, MessageCircle, UserPlus, Zap, Loader2, Wifi, Swords, Coffee, Monitor, CheckCircle2, Search, Clock, Users as UsersIcon } from 'lucide-react';
@@ -7,7 +7,6 @@ import { useUser } from '../contexts/UserContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { projectId } from '../utils/supabase/info';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 
 interface RandomMatchDialogProps {
@@ -212,8 +211,12 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
   if (!currentUser) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full w-full h-full md:max-w-[90vw] md:max-h-[90vh] md:h-auto p-0 border-0 md:border md:border-purple-500/30 bg-slate-950 md:rounded-3xl overflow-hidden !flex !flex-col items-center justify-center relative shadow-[0_0_100px_rgba(88,28,135,0.4)] [&>button]:hidden">
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content 
+          className="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%] w-full h-full md:max-w-[90vw] md:max-h-[90vh] md:h-auto md:w-auto p-0 border-0 md:border md:border-purple-500/30 bg-slate-950 md:rounded-3xl overflow-hidden flex flex-col items-center justify-center shadow-[0_0_100px_rgba(88,28,135,0.4)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] duration-200"
+        >
         
         {/* Background Grid & Effects */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-slate-950 to-slate-950" />
@@ -536,7 +539,8 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
             </motion.div>
           )}
         </AnimatePresence>
-      </DialogContent>
-    </Dialog>
+      </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

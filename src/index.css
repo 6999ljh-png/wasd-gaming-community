@@ -909,10 +909,6 @@
     overflow: hidden;
   }
 
-  .\!flex {
-    display: flex !important;
-  }
-
   .block {
     display: block;
   }
@@ -1348,10 +1344,6 @@
     max-width: calc(100% - 2rem);
   }
 
-  .max-w-full {
-    max-width: 100%;
-  }
-
   .max-w-md {
     max-width: var(--container-md);
   }
@@ -1518,10 +1510,6 @@
 
   .grid-rows-\[auto_auto\] {
     grid-template-rows: auto auto;
-  }
-
-  .\!flex-col {
-    flex-direction: column !important;
   }
 
   .flex-col {
@@ -1951,6 +1939,16 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-black\/50 {
       background-color: color-mix(in oklab, var(--color-black) 50%, transparent);
+    }
+  }
+
+  .bg-black\/80 {
+    background-color: #000c;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-black\/80 {
+      background-color: color-mix(in oklab, var(--color-black) 80%, transparent);
     }
   }
 
@@ -4657,6 +4655,14 @@
     --tw-exit-opacity: 0;
   }
 
+  .data-\[state\=closed\]\:slide-out-to-left-1\/2[data-state="closed"] {
+    --tw-exit-translate-x: calc(1 / 2 * 100%);
+  }
+
+  .data-\[state\=closed\]\:slide-out-to-top-\[48\%\][data-state="closed"] {
+    --tw-exit-translate-y: calc(48% * -1);
+  }
+
   .data-\[state\=closed\]\:zoom-out-95[data-state="closed"] {
     --tw-exit-scale: .95;
   }
@@ -4679,6 +4685,14 @@
 
   .data-\[state\=open\]\:fade-in-0[data-state="open"] {
     --tw-enter-opacity: 0;
+  }
+
+  .data-\[state\=open\]\:slide-in-from-left-1\/2[data-state="open"] {
+    --tw-enter-translate-x: calc(1 / 2 * 100%);
+  }
+
+  .data-\[state\=open\]\:slide-in-from-top-\[48\%\][data-state="open"] {
+    --tw-enter-translate-y: calc(48% * -1);
   }
 
   .data-\[state\=open\]\:zoom-in-95[data-state="open"] {
@@ -4964,6 +4978,12 @@
   @media (width >= 48rem) {
     .md\:w-96 {
       width: calc(var(--spacing) * 96);
+    }
+  }
+
+  @media (width >= 48rem) {
+    .md\:w-auto {
+      width: auto;
     }
   }
 
@@ -5643,10 +5663,6 @@
 
   .\[\&\:last-child\]\:pb-6:last-child {
     padding-bottom: calc(var(--spacing) * 6);
-  }
-
-  .\[\&\>button\]\:hidden > button {
-    display: none;
   }
 
   .\[\&\>svg\]\:pointer-events-none > svg {
