@@ -10,6 +10,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { PostReactions } from './PostReactions';
 import { BookmarkButton } from './BookmarkButton';
 import { PostTags } from './PostTags';
+import { QuickReactions } from './QuickReactions';
+import { OnlineStatusBadge } from './OnlineStatusBadge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -354,9 +356,13 @@ export function PostDetail({ post, onViewProfile, onPostDeleted, onPostUpdated, 
             )}
           </div>
 
-          {/* Reactions */}
-          <div className="pt-3">
-            <PostReactions postId={post.id} />
+          {/* Quick Reactions */}
+          <div className="pt-3 border-t border-slate-800/50">
+            <QuickReactions 
+              postId={post.id}
+              initialReactions={post.reactions || {}}
+              initialUserReactions={post.userReactions || []}
+            />
           </div>
 
           <div className="flex items-center gap-2 pt-4 border-t border-slate-800">

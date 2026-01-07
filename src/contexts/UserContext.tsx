@@ -15,6 +15,8 @@ interface UserData {
     commentsCount: number;
     likesReceived: number;
   };
+  streak?: number;  // Positive for win streak, negative for loss streak
+  gamePreferences?: string[];  // Array of preference IDs
   accessToken?: string;
 }
 

@@ -12,6 +12,9 @@ import { GameLibraryDialog } from './GameLibraryDialog';
 import { ShareProfileDialog } from './ShareProfileDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { PostDetail } from './PostDetail';
+import { GamePreferenceTags } from './GamePreferenceTags';
+import { StreakBadge } from './StreakBadge';
+import { OnlineStatusBadge } from './OnlineStatusBadge';
 
 export function PersonalPage() {
   const { currentUser } = useUser();
@@ -215,6 +218,33 @@ export function PersonalPage() {
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* Game Streak and Preferences */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Current Streak */}
+        <Card className="glass-dark border-purple-500/20 p-6">
+          <h4 className="text-white text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">📊</span>
+            当前状态
+          </h4>
+          <StreakBadge streak={currentUser.streak || 0} size="lg" />
+        </Card>
+
+        {/* Game Preferences */}
+        <Card className="glass-dark border-purple-500/20 p-6">
+          <h4 className="text-white text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">🎮</span>
+            喜欢的游戏
+          </h4>
+          <GamePreferenceTags 
+            preferences={currentUser.gamePreferences || []} 
+            editable={false}
+          />
+          {(!currentUser.gamePreferences || currentUser.gamePreferences.length === 0) && (
+            <p className="text-slate-500 text-sm">暂未选择喜欢的游戏</p>
+          )}
+        </Card>
       </div>
 
       {/* Tabs for My Posts and Favorites */}

@@ -8,6 +8,9 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { projectId } from '../utils/supabase/info';
 import { Input } from './ui/input';
+import { MatchingForumFeed } from './MatchingForumFeed';
+import { updateGamePreferences, GAME_ID_MAPPING } from '../utils/updateGamePreferences';
+import { VirtualLobby } from './VirtualLobby';
 
 interface RandomMatchDialogProps {
   open: boolean;
@@ -31,7 +34,7 @@ const MODES = [
 ];
 
 export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps) {
-  const { currentUser } = useUser();
+  const { currentUser, setCurrentUser } = useUser();
   const { t } = useLanguage();
   const [status, setStatus] = useState<'idle' | 'searching' | 'found'>('idle');
   const [matchData, setMatchData] = useState<any>(null);
@@ -154,6 +157,24 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
     setStatus('searching');
     setTimer(0);
     
+    // Auto-update game preferences based on the game they're matching for
+    const mappedGameId = GAME_ID_MAPPING[selectedGame];
+    if (mappedGameId && currentUser.accessToken && currentUser.id) {
+      const updatedPrefs = await updateGamePreferences(
+        mappedGameId,
+        currentUser.accessToken,
+        currentUser.id
+      );
+      
+      if (updatedPrefs && setCurrentUser) {
+        // Update the user context with new preferences
+        setCurrentUser({
+          ...currentUser,
+          gamePreferences: updatedPrefs
+        });
+      }
+    }
+    
     try {
       const response = await fetch(`https://${projectId}.supabase.co/functions/v1/make-server-b33c7dce/match/join`, {
         method: 'POST',
@@ -181,7 +202,7 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
       console.error('Join error:', error);
       setStatus('idle');
     }
-  }, [currentUser, status, selectedGame, selectedMode, micPreference]);
+  }, [currentUser, setCurrentUser, status, selectedGame, selectedMode, micPreference]);
 
   const handleCancel = useCallback(async () => {
     if (status === 'searching' && currentUser?.accessToken) {
@@ -265,11 +286,6 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
                     <p className="text-slate-400 text-base md:text-lg lg:text-xl font-light leading-relaxed max-w-md mx-auto lg:mx-0">
                       {t('match.desc') || 'Select your mission parameters and find the perfect partner for your next game.'}
                     </p>
-                    
-                    <div className="flex items-center justify-center lg:justify-start gap-2 text-xs md:text-sm text-green-400 font-mono bg-green-900/20 py-1.5 px-3 rounded-full w-fit mx-auto lg:mx-0 border border-green-500/20">
-                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      {onlineCount.toLocaleString()} {t('match.online') || 'Agents Online'}
-                    </div>
                   </div>
                 </div>
 
@@ -368,174 +384,106 @@ export function RandomMatchDialog({ open, onOpenChange }: RandomMatchDialogProps
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="z-10 flex flex-col items-center justify-center w-full h-full p-4 md:p-8"
+              className="z-10 w-full h-full flex flex-col lg:flex-row gap-6 p-4 md:p-6 lg:p-8"
             >
-              {/* Complex Radar UI */}
-              <div className="relative w-[280px] h-[280px] sm:w-80 sm:h-80 md:w-96 md:h-96 lg:w-[28rem] lg:h-[28rem] flex items-center justify-center mb-8 md:mb-12">
-                {/* Rings */}
-                <div className="absolute inset-0 rounded-full border border-purple-500/20" />
-                <div className="absolute inset-[20%] rounded-full border border-purple-500/20" />
-                <div className="absolute inset-[40%] rounded-full border border-purple-500/20" />
-                
-                {/* Rotating Scanner Line */}
-                <div className="absolute inset-0 rounded-full animate-[spin_4s_linear_infinite] origin-center">
-                  <div className="w-1/2 h-full bg-gradient-to-l from-transparent via-purple-500/10 to-transparent blur-sm transform rotate-90 origin-bottom-right opacity-50" style={{ clipPath: 'polygon(100% 50%, 0 50%, 100% 0)' }} />
-                  <div className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-gradient-to-b from-purple-400 to-transparent shadow-[0_0_10px_#a855f7]" />
-                </div>
+              {/* Left Side: Radar Scanner (Sticky) */}
+              <div className="lg:w-2/5 flex-shrink-0">
+                <div className="lg:sticky lg:top-4 flex flex-col items-center justify-start space-y-4">
+                  {/* Compact Radar UI */}
+                  <div className="relative w-[240px] h-[240px] md:w-64 md:h-64 lg:w-72 lg:h-72 flex items-center justify-center">
+                    {/* Rings */}
+                    <div className="absolute inset-0 rounded-full border border-purple-500/20" />
+                    <div className="absolute inset-[20%] rounded-full border border-purple-500/20" />
+                    <div className="absolute inset-[40%] rounded-full border border-purple-500/20" />
+                    
+                    {/* Rotating Scanner Line */}
+                    <div className="absolute inset-0 rounded-full animate-[spin_4s_linear_infinite] origin-center">
+                      <div className="w-1/2 h-full bg-gradient-to-l from-transparent via-purple-500/10 to-transparent blur-sm transform rotate-90 origin-bottom-right opacity-50" style={{ clipPath: 'polygon(100% 50%, 0 50%, 100% 0)' }} />
+                      <div className="absolute top-0 left-1/2 w-[2px] h-1/2 bg-gradient-to-b from-purple-400 to-transparent shadow-[0_0_10px_#a855f7]" />
+                    </div>
 
-                {/* Info Overlay */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8 md:-translate-y-10 bg-slate-900/80 border border-slate-700 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-mono text-purple-300 whitespace-nowrap">
-                   Searching: {GAMES.find(g => g.id === selectedGame)?.name} • {selectedMode === 'competitive' ? 'Ranked' : 'Casual'}
-                </div>
+                    {/* Info Overlay */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8 bg-slate-900/80 border border-slate-700 px-3 py-1 rounded-full text-xs font-mono text-purple-300 whitespace-nowrap">
+                      {GAMES.find(g => g.id === selectedGame)?.name} • {selectedMode === 'competitive' ? 'Ranked' : 'Casual'}
+                    </div>
 
-                {/* Random Blips */}
-                <div className="absolute top-[20%] right-[30%] w-1.5 h-1.5 md:w-2 md:h-2 bg-green-400 rounded-full animate-ping opacity-75" />
-                <div className="absolute bottom-[30%] left-[20%] w-1.5 h-1.5 md:w-2 md:h-2 bg-blue-400 rounded-full animate-ping opacity-50 delay-700" />
-                <div className="absolute top-[60%] right-[10%] w-1.5 h-1.5 md:w-2 md:h-2 bg-yellow-400 rounded-full animate-ping opacity-60 delay-300" />
+                    {/* Random Blips */}
+                    <div className="absolute top-[20%] right-[30%] w-2 h-2 bg-green-400 rounded-full animate-ping opacity-75" />
+                    <div className="absolute bottom-[30%] left-[20%] w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-50 delay-700" />
+                    <div className="absolute top-[60%] right-[10%] w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-60 delay-300" />
 
-                {/* Center User */}
-                <div className="relative z-10">
-                  <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-20" />
-                  <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-32 lg:h-32 ring-4 ring-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.5)]">
-                    <AvatarImage src={currentUser.avatar} />
-                    <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
-                  </Avatar>
+                    {/* Center User */}
+                    <div className="relative z-10">
+                      <div className="absolute inset-0 bg-purple-500 rounded-full animate-ping opacity-20" />
+                      <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-4 ring-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.5)]">
+                        <AvatarImage src={currentUser.avatar} />
+                        <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
+                      </Avatar>
+                    </div>
+                  </div>
+
+                  {/* Matching Status */}
+                  <div className="text-center space-y-3 w-full">
+                    <h3 className="text-xl md:text-2xl font-bold text-white flex items-center justify-center gap-2">
+                      <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                      {t('match.searching') || 'Scanning...'}
+                    </h3>
+                    <p className="text-purple-300 font-mono text-lg tracking-widest">{formatTime(timer)}</p>
+                    
+                    <div className="flex flex-col gap-2">
+                      <div className="h-9 px-3 bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center gap-2 text-sm text-slate-400">
+                        <Monitor className="w-4 h-4" />
+                        {GAMES.find(g => g.id === selectedGame)?.name}
+                      </div>
+                      <div className="h-9 px-3 bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center gap-2 text-sm text-slate-400">
+                        {selectedMode === 'competitive' ? <Swords className="w-4 h-4" /> : <Coffee className="w-4 h-4" />}
+                        {selectedMode === 'competitive' ? 'Competitive' : 'Casual'}
+                      </div>
+                    </div>
+
+                    <Button 
+                      variant="ghost" 
+                      className="mt-4 text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10 w-full"
+                      onClick={handleCancel}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                  </div>
                 </div>
               </div>
 
-              <div className="text-center space-y-2">
-                <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 flex items-center justify-center gap-2 md:gap-3">
-                  <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin text-purple-400" />
-                  {t('match.searching') || 'Scanning Network...'}
-                </h3>
-                <p className="text-purple-300 font-mono text-lg md:text-xl tracking-widest">{formatTime(timer)}</p>
-                
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-4 mt-4 md:mt-6">
-                   <div className="h-8 md:h-10 px-3 md:px-4 bg-slate-900/50 rounded-lg border border-slate-800 flex items-center gap-2 text-xs md:text-sm text-slate-400">
-                     <Monitor className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                     {GAMES.find(g => g.id === selectedGame)?.name}
-                   </div>
-                   <div className="h-8 md:h-10 px-3 md:px-4 bg-slate-900/50 rounded-lg border border-slate-800 flex items-center gap-2 text-xs md:text-sm text-slate-400">
-                     {selectedMode === 'competitive' ? <Swords className="w-3.5 h-3.5 md:w-4 md:h-4" /> : <Coffee className="w-3.5 h-3.5 md:w-4 md:h-4" />}
-                     {selectedMode === 'competitive' ? 'Ranked' : 'Casual'}
-                   </div>
+              {/* Right Side: Forum Feed */}
+              <div className="flex-1 lg:overflow-hidden flex flex-col">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-purple-400" />
+                    {t('match.browseForum') || 'Browse while waiting...'}
+                  </h3>
+                  <span className="text-xs text-slate-500 font-mono">Live Feed</span>
+                </div>
+                <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-purple-500/20 scrollbar-track-transparent">
+                  <MatchingForumFeed />
                 </div>
               </div>
-              
-              <Button 
-                variant="ghost" 
-                className="mt-8 md:mt-12 text-slate-500 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/10"
-                onClick={handleCancel}
-              >
-                {t('common.cancel')}
-              </Button>
             </motion.div>
           )}
 
           {status === 'found' && matchData && (
             <motion.div 
               key="found"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="z-10 w-full max-w-5xl px-4 md:px-8 py-8 md:py-12 flex flex-col items-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="z-10 w-full h-full flex items-center justify-center"
             >
-              <motion.div 
-                initial={{ y: -20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-center mb-6 md:mb-8 lg:mb-12"
-              >
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 italic tracking-tighter drop-shadow-sm">
-                  MATCH FOUND!
-                </h2>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mt-3 md:mt-4">
-                  <div className="flex items-center gap-2 text-green-400 text-xs md:text-sm font-bold bg-green-500/10 py-1 px-3 md:px-4 rounded-full border border-green-500/20">
-                    <Wifi className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                    <span>Connection Established</span>
-                  </div>
-                  <div className="text-slate-500 text-xs md:text-sm font-mono">
-                    Playing {GAMES.find(g => g.id === matchData.game)?.name} ({matchData.mode})
-                  </div>
-                </div>
-              </motion.div>
-
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8 lg:gap-16 mb-8 md:mb-12 w-full">
-                {/* Current User Card */}
-                <motion.div 
-                  initial={{ x: -50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="bg-slate-900/80 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-800 flex flex-col items-center gap-3 md:gap-4 w-56 md:w-64 shadow-xl"
-                >
-                  <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-4 ring-blue-500 shadow-lg">
-                    <AvatarImage src={currentUser.avatar} />
-                    <AvatarFallback>{currentUser.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-center w-full">
-                    <h3 className="text-white font-bold text-lg md:text-xl truncate w-full px-2">{currentUser.name}</h3>
-                    <p className="text-blue-400 text-xs md:text-sm font-bold mt-1">LV.{currentUser.level}</p>
-                    {micPreference && <div className="mt-2 text-[10px] md:text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 flex items-center justify-center gap-1"><Mic className="w-3 h-3" /> Mic ON</div>}
-                  </div>
-                </motion.div>
-
-                {/* VS Icon */}
-                <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", delay: 0.6 }}
-                  className="relative z-20"
-                >
-                  <div className="absolute inset-0 bg-yellow-500 blur-2xl opacity-20 animate-pulse" />
-                  <span className="text-5xl md:text-7xl lg:text-8xl font-black text-white italic drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]">VS</span>
-                </motion.div>
-
-                {/* Opponent Card */}
-                <motion.div 
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="bg-slate-900/80 p-4 md:p-6 rounded-2xl md:rounded-3xl border border-slate-800 flex flex-col items-center gap-3 md:gap-4 w-56 md:w-64 shadow-xl relative overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-b from-red-500/10 to-transparent" />
-                  <Avatar className="w-20 h-20 md:w-24 md:h-24 ring-4 ring-red-500 shadow-lg z-10">
-                    <AvatarImage src={matchData.avatar} />
-                    <AvatarFallback>{matchData.name?.[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="text-center z-10 w-full">
-                    <h3 className="text-white font-bold text-lg md:text-xl truncate w-full px-2">{matchData.name}</h3>
-                    <p className="text-red-400 text-xs md:text-sm font-bold mt-1">LV.{matchData.level}</p>
-                    {matchData.mic && <div className="mt-2 text-[10px] md:text-xs bg-slate-800 px-2 py-1 rounded text-slate-400 flex items-center justify-center gap-1"><Mic className="w-3 h-3" /> Mic ON</div>}
-                  </div>
-                </motion.div>
-              </div>
-
-              <motion.div 
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full max-w-md"
-              >
-                <Button 
-                  className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-green-500/25 rounded-lg md:rounded-xl transition-all hover:-translate-y-1"
-                  onClick={() => alert('Feature coming soon: Chat')}
-                >
-                  <MessageCircle className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  {t('match.sayHi') || 'SAY HI'}
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="flex-1 h-12 md:h-14 text-base md:text-lg font-bold border-slate-700 hover:bg-slate-800 text-slate-300 rounded-lg md:rounded-xl transition-all"
-                  onClick={() => {
-                    handleCancel();
-                    setStatus('searching');
-                    // Need to restart search manually or reset to idle
-                    setStatus('idle'); 
-                  }}
-                >
-                  <UserPlus className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                  {t('match.next') || 'NEXT'}
-                </Button>
-              </motion.div>
+              <VirtualLobby 
+                currentUser={currentUser}
+                opponent={matchData}
+                gameId={selectedGame}
+                mode={selectedMode}
+                onReady={() => onOpenChange(false)}
+                onCancel={handleCancel}
+              />
             </motion.div>
           )}
         </AnimatePresence>

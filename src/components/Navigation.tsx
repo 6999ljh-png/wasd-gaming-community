@@ -158,23 +158,6 @@ export function Navigation({ activeTab, onTabChange, onPostCreated }: Navigation
 
             <Button
               variant="ghost"
-              onClick={() => onTabChange('forum')}
-              className={`gap-2 transition-all duration-300 rounded-xl relative overflow-hidden group flex-shrink-0 ${
-                activeTab === 'forum' 
-                  ? 'text-white bg-purple-500/20' 
-                  : 'text-slate-400 hover:text-white hover:bg-purple-500/10'
-              }`}
-              size={isMobile ? 'icon' : 'default'}
-            >
-              {activeTab === 'forum' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-600/20 animate-gradient" />
-              )}
-              <MessageSquare className={`w-4 h-4 relative z-10 ${activeTab === 'forum' ? 'scale-110' : 'group-hover:scale-110'} transition-transform`} />
-              {!isMobile && <span className="relative z-10">{t('nav.forum')}</span>}
-            </Button>
-
-            <Button
-              variant="ghost"
               onClick={() => onTabChange('friends')}
               className={`gap-2 transition-all duration-300 rounded-xl relative overflow-hidden group flex-shrink-0 ${
                 activeTab === 'friends' 

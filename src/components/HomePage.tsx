@@ -6,8 +6,9 @@ import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { useState, useEffect } from 'react';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { useLanguage } from '../contexts/LanguageContext';
+import { MatchingForumFeed } from './MatchingForumFeed';
 import { GameSearchDialog } from './GameSearchDialog';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, MessageSquare } from 'lucide-react';
 import { FriendsSidebar } from './FriendsSidebar';
 import { AddFriendDialog } from './AddFriendDialog';
 
@@ -23,8 +24,6 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
   const [loading, setLoading] = useState(true);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [isAddFriendDialogOpen, setIsAddFriendDialogOpen] = useState(false);
-  const [showAllGames, setShowAllGames] = useState(false);
-  const [showAllPosts, setShowAllPosts] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -102,9 +101,6 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
       console.error('Error fetching trending posts:', error);
     }
   };
-
-  const displayedGames = showAllGames ? trendingGames : trendingGames.slice(0, 5);
-  const displayedPosts = showAllPosts ? trendingPosts : trendingPosts.slice(0, 5);
 
   return (
     <div className="space-y-12">
@@ -208,157 +204,25 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
         )}
       </div>
 
-      {/* Trending Sections Grid */}
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Trending Games */}
-        <Card className="glass-dark border-purple-500/20 p-6 space-y-4">
-          <div className="flex items-center justify-between">
+      {/* Forum Feed Section */}
+      <div className="space-y-6 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Gamepad2 className="w-6 h-6 text-purple-400" />
-              <h3 className="text-white text-xl font-bold">{t('home.trendingGames')}</h3>
+              <MessageSquare className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+              <h2 className="text-white text-xl md:text-2xl font-bold">{t('nav.forum')}</h2>
             </div>
+            <p className="text-slate-400 text-sm md:text-base">Join the conversation with other players</p>
           </div>
-          
-          <div className="space-y-2">
-            {displayedGames.length > 0 ? displayedGames.map((game, index) => (
-              <div 
-                key={index}
-                className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-purple-500/10 hover:border-purple-500/30"
-              >
-                <div className="flex-shrink-0 w-8 text-center">
-                  <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">
-                    #{index + 1}
-                  </span>
-                </div>
-                <Gamepad2 className="w-10 h-10 text-purple-400" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-white truncate">{game.gameName}</p>
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      {game.count} {t('home.posts')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" />
-                      {game.totalLikes}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {game.totalViews}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <div className="text-center text-slate-400 py-8">
-                {t('home.noGames')}
-              </div>
-            )}
-          </div>
-
-          {trendingGames.length > 5 && (
-            <Button
-              variant="outline"
-              className="w-full border-purple-500/20 hover:bg-purple-500/10 text-purple-400"
-              onClick={() => setShowAllGames(!showAllGames)}
-            >
-              {showAllGames ? (
-                <>
-                  <ChevronUp className="w-4 h-4 mr-2" />
-                  {t('home.showLess')}
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-4 h-4 mr-2" />
-                  {t('home.showMore')}
-                </>
-              )}
-            </Button>
-          )}
-        </Card>
-
-        {/* Trending Posts */}
-        <Card className="glass-dark border-purple-500/20 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Flame className="w-6 h-6 text-orange-400" />
-              <h3 className="text-white text-xl font-bold">{t('home.trendingPosts')}</h3>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            {displayedPosts.length > 0 ? displayedPosts.map((post, index) => (
-              <div 
-                key={post.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 transition-colors border border-purple-500/10 hover:border-purple-500/30 cursor-pointer group"
-                onClick={() => {
-                  if (post.isExternal && post.url) {
-                    // Open external link in new tab
-                    window.open(post.url, '_blank', 'noopener,noreferrer');
-                  } else if (onViewPost) {
-                    // Navigate to internal post
-                    onViewPost(post.id);
-                  }
-                }}
-              >
-                <div className="flex-shrink-0 w-8 text-center">
-                  <span className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-400">
-                    #{index + 1}
-                  </span>
-                </div>
-                <Flame className="w-10 h-10 text-orange-400" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-white truncate flex-1">{post.title}</p>
-                    {post.isExternal && (
-                      <ExternalLink className="w-4 h-4 text-slate-400 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3 h-3" />
-                      {post.views || 0}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Heart className="w-3 h-3" />
-                      {post.likes || 0}
-                    </span>
-                    <span className="text-purple-400">{post.gameName}</span>
-                    {post.isExternal && post.source && (
-                      <span className="text-xs bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">
-                        {post.source}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )) : (
-              <div className="text-center text-slate-400 py-8">
-                {t('home.noPosts')}
-              </div>
-            )}
-          </div>
-
-          {trendingPosts.length > 5 && (
-            <Button
-              variant="outline"
-              className="w-full border-purple-500/20 hover:bg-purple-500/10 text-purple-400"
-              onClick={() => setShowAllPosts(!showAllPosts)}
-            >
-              {showAllPosts ? (
-                <>
-                  <ChevronUp className="w-4 h-4 mr-2" />
-                  {t('home.showLess')}
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="w-4 h-4 mr-2" />
-                  {t('home.showMore')}
-                </>
-              )}
-            </Button>
-          )}
-        </Card>
+        </div>
+        
+        <MatchingForumFeed 
+          onPostClick={(postId) => {
+             if (onViewPost) {
+               onViewPost(postId);
+             }
+          }} 
+        />
       </div>
 
       {/* Game Search Dialog */}
@@ -366,6 +230,8 @@ export function HomePage({ onViewProfile, onViewPost }: HomePageProps) {
         open={isSearchDialogOpen}
         onOpenChange={setIsSearchDialogOpen}
         onGameSelect={(game) => console.log('Selected game:', game)}
+        trendingGames={trendingGames}
+        trendingPosts={trendingPosts}
       />
 
       {/* Add Friend Dialog */}

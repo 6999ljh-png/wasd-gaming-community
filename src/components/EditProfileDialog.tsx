@@ -8,6 +8,7 @@ import { User, Upload, Loader2, Camera } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { projectId } from '../utils/supabase/info';
+import { GamePreferenceTags } from './GamePreferenceTags';
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ export function EditProfileDialog({ open, onOpenChange, onProfileUpdated }: Edit
   const [name, setName] = useState(currentUser?.name || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [bio, setBio] = useState(currentUser?.bio || '');
+  const [gamePreferences, setGamePreferences] = useState<string[]>(currentUser?.gamePreferences || []);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +114,7 @@ export function EditProfileDialog({ open, onOpenChange, onProfileUpdated }: Edit
             name: name.trim(),
             avatar: avatar.trim(),
             bio: bio.trim(),
+            gamePreferences: gamePreferences,
           }),
         }
       );
@@ -232,6 +235,26 @@ export function EditProfileDialog({ open, onOpenChange, onProfileUpdated }: Edit
             <p className="text-xs text-slate-400 text-right">
               {bio.length}/200
             </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>🎮 喜欢的游戏</Label>
+            <p className="text-xs text-slate-400 mb-2">选择你经常玩的游戏（最多选择5个）</p>
+            <GamePreferenceTags
+              preferences={gamePreferences}
+              editable={true}
+              onToggle={(prefId) => {
+                if (gamePreferences.includes(prefId)) {
+                  setGamePreferences(gamePreferences.filter(id => id !== prefId));
+                } else {
+                  if (gamePreferences.length < 5) {
+                    setGamePreferences([...gamePreferences, prefId]);
+                  } else {
+                    alert('最多只能选择5个游戏');
+                  }
+                }
+              }}
+            />
           </div>
 
           <div className="flex gap-3 pt-4">
